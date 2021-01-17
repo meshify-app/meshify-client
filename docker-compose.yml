@@ -1,0 +1,14 @@
+version: '2'
+services:
+  meshify-client-build:
+    container_name: meshify-client-build
+    image: meshify-client-build
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: bridge
+    volumes:
+      - .:/docker
+    environment:
+      - USERID
+      - GROUPID
