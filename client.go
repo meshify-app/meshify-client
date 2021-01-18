@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var meshify_host_api_fmt = "%s/api/v1.0/host/%s"
+var meshify_host_api_fmt = "%s/api/v1.0/host/%s/status"
 
 func getQueryLogs(path string) ([]byte, error) {
 	log.Infof("Retrieving query logs from %s", path)
