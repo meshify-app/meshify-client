@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var meshify_host_api_fmt = "%s/api/v1.0/host/%s/status"
+var MeshifyHost_api_fmt = "%s/api/v1.0/host/%s/status"
 
 type uploadError struct {
 	respCode int
@@ -42,7 +41,7 @@ func StartHttpClient(host string, c chan []byte) {
 			Dial: (&net.Dialer{
 				Timeout:   5 * time.Second,
 				KeepAlive: 60 * time.Second,
-				LocalAddr: config.source_addr,
+				LocalAddr: config.sourceAddr,
 			}).Dial,
 			TLSHandshakeTimeout: 10 * time.Second,
 		}
@@ -55,7 +54,7 @@ func StartHttpClient(host string, c chan []byte) {
 	for {
 		var content []byte
 		content = <-c
-		var reqUrl string = fmt.Sprintf(meshify_host_api_fmt, host, config.Host_Id)
+		var reqUrl string = fmt.Sprintf(MeshifyHost_api_fmt, host, config.HostID)
 		log.Infof("  GET %s", reqUrl)
 		req, err := http.NewRequest("GET", reqUrl, bytes.NewBuffer(content))
 		if err != nil {
@@ -136,13 +135,14 @@ func UpdateMeshifyConfig(body []byte) {
 			log.Errorf("Error reading message from server")
 		}
 
-		log.Infof("%s", msg)
+		log.Infof("%v", msg)
 
 		var index int
 		for i := 0; i < len(msg.Config); i++ {
 			for j := 0; j < len(msg.Config[i].Hosts); j++ {
-				if msg.Config[i].Hosts[j].Id == config.Host_Id {
+				if msg.Config[i].Hosts[j].Id == config.HostID {
 					index = j
+					break
 				}
 			}
 			text, err := DumpWireguardConfig(&msg.Config[i].Hosts[index], &(msg.Config[i].Hosts))
@@ -151,27 +151,13 @@ func UpdateMeshifyConfig(body []byte) {
 			}
 			err = util.WriteFile(msg.Config[i].MeshName+".conf", text)
 
+			err = ReloadWireguardConfig(msg.Config[i].MeshName)
+			if err == nil {
+				log.Infof("meshify.conf reloaded.  New config:\n%s", body)
+			}
 		}
 
-		err = ReloadWireguardConfig()
-		if err == nil {
-			log.Infof("meshify.conf reloaded.  New config:\n%s", body)
-		}
 	}
-
-}
-
-func ReloadWireguardConfig() error {
-
-	args := []string{"setconf", "meshify.conf"}
-
-	out, err := exec.Command("wg", args...).Output()
-	if err != nil {
-		log.Errorf("Error reloading WireGuard: %v (%s)", err, out)
-		return err
-	}
-
-	return nil
 
 }
 
@@ -202,14 +188,14 @@ func DoWork() {
 		// Determine current timestamp (the wallclock time we'll retrieve files using)
 
 		c := make(chan []byte)
-		go StartHttpClient(config.Meshify_Host, c)
+		go StartHttpClient(config.MeshifyHost, c)
 
 		curTs = CalculateCurrentTimestamp()
 
 		t := time.Unix(curTs, 0)
 		log.Infof("current timestamp = %v (%s)", curTs, t.UTC())
 
-		curTs += config.Check_interval
+		curTs += config.CheckInterval
 
 		for {
 			time.Sleep(100 * time.Millisecond)
@@ -227,7 +213,7 @@ func DoWork() {
 				c <- b
 
 				curTs = CalculateCurrentTimestamp()
-				curTs += config.Check_interval
+				curTs += config.CheckInterval
 			}
 
 		}
@@ -242,10 +228,10 @@ func CalculateCurrentTimestamp() int64 {
 
 	now := time.Now().Unix()
 
-	if config.Check_interval == 0 {
+	if config.CheckInterval == 0 {
 		return now
 	} else {
-		return now - (now % config.Check_interval)
+		return now - (now % config.CheckInterval)
 	}
 
 }

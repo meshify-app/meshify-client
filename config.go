@@ -9,14 +9,14 @@ import (
 )
 
 var config struct {
-	Quiet          bool
-	Meshify_Host   string
-	Host_Id        string
-	Check_interval int64
-	tls            tls.Config
-	Source_address string
-	source_addr    *net.TCPAddr
-	Debug          bool
+	Quiet         bool
+	MeshifyHost   string
+	HostID        string
+	CheckInterval int64
+	tls           tls.Config
+	SourceAddress string
+	sourceAddr    *net.TCPAddr
+	Debug         bool
 }
 
 type ConfigError struct {
@@ -31,14 +31,14 @@ func loadConfig() error {
 	// Get configuration
 	config.Debug = false
 	config.Quiet = false
-	config.Check_interval = 5
-	config.Source_address = "0.0.0.0"
+	config.CheckInterval = 5
+	config.SourceAddress = "0.0.0.0"
 	config.tls.MinVersion = tls.VersionTLS10
-	config.Meshify_Host = "https://414n.com/"
+	config.MeshifyHost = "https://dev.meshify.app/"
 
 	configPath := flag.String("C", "meshify-client.config.json", "Path to configuration file")
-	Meshify_Host := flag.String("server", "", "Meshify server to connect to")
-	check_interval := flag.Int64("interval", 0, "Time interval between maps.  Default is 5 (5 seconds)")
+	MeshifyHost := flag.String("server", "", "Meshify server to connect to")
+	CheckInterval := flag.Int64("interval", 0, "Time interval between maps.  Default is 5 (5 seconds)")
 	quiet := flag.Bool("quiet", false, "Do not output to stdout (only to syslog)")
 	source_str := flag.String("source", "", "Source address for http client requests")
 	flag.Parse()
@@ -46,7 +46,7 @@ func loadConfig() error {
 	// Open the config file specified
 
 	file, err := os.Open(*configPath)
-	if err != nil && *Meshify_Host == "" {
+	if err != nil && *MeshifyHost == "" {
 		return err
 	}
 
@@ -63,23 +63,23 @@ func loadConfig() error {
 		config.Quiet = *quiet
 	}
 
-	if *Meshify_Host != "" {
-		config.Meshify_Host = *Meshify_Host
+	if *MeshifyHost != "" {
+		config.MeshifyHost = *MeshifyHost
 	}
 
-	if config.Meshify_Host == "" {
-		return &ConfigError{"A meshify-client.config.json file with a Meshify_Host parameter is required"}
+	if config.MeshifyHost == "" {
+		return &ConfigError{"A meshify-client.config.json file with a MeshifyHost parameter is required"}
 	}
 
-	if *check_interval != 0 {
-		config.Check_interval = *check_interval
+	if *CheckInterval != 0 {
+		config.CheckInterval = *CheckInterval
 	}
 
 	if *source_str != "" {
-		config.Source_address = *source_str
+		config.SourceAddress = *source_str
 	}
 
-	config.source_addr, err = net.ResolveTCPAddr("tcp", config.Source_address+":0")
+	config.sourceAddr, err = net.ResolveTCPAddr("tcp", config.SourceAddress+":0")
 	if err != nil {
 		return err
 	}
