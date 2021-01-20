@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -11,23 +12,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/meshify-app/meshify/model"
+	util "github.com/meshify-app/meshify/util"
 	log "github.com/sirupsen/logrus"
 )
 
 var meshify_host_api_fmt = "%s/api/v1.0/host/%s/status"
-
-func getQueryLogs(path string) ([]byte, error) {
-	log.Infof("Retrieving query logs from %s", path)
-
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	b, err := ioutil.ReadAll(file)
-
-	return b, err
-}
 
 type uploadError struct {
 	respCode int
@@ -140,6 +130,28 @@ func UpdateMeshifyConfig(body []byte) {
 			log.Infof("Error writing meshify.conf file: %v", err)
 			return
 		}
+		var msg model.Message
+		err = json.Unmarshal(body, &msg)
+		if err != nil {
+			log.Errorf("Error reading message from server")
+		}
+
+		log.Infof("%s", msg)
+
+		var index int
+		for i := 0; i < len(msg.Config); i++ {
+			for j := 0; j < len(msg.Config[i].Hosts); j++ {
+				if msg.Config[i].Hosts[j].Id == config.Host_Id {
+					index = j
+				}
+			}
+			text, err := DumpWireguardConfig(&msg.Config[i].Hosts[index], &(msg.Config[i].Hosts))
+			if err != nil {
+				log.Errorf("error on template: %s", err)
+			}
+			err = util.WriteFile(msg.Config[i].MeshName+".conf", text)
+
+		}
 
 		err = ReloadWireguardConfig()
 		if err == nil {
@@ -205,10 +217,12 @@ func DoWork() {
 
 			if ts.Unix() >= curTs {
 
-				b, err := getQueryLogs("")
+				err := getStatistics()
 				if err != nil {
-					log.Errorf("getQueryLogs: %v", err)
+					log.Errorf("getStatistics: %v", err)
 				}
+
+				b := []byte("Alan")
 
 				c <- b
 
@@ -218,6 +232,10 @@ func DoWork() {
 
 		}
 	}()
+}
+
+func getStatistics() error {
+	return nil
 }
 
 func CalculateCurrentTimestamp() int64 {

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"text/template"
 
-	model "github.com/grapid/meshify/model"
-	util "github.com/grapid/meshify/util"
+	model "github.com/meshify-app/meshify/model"
+	util "github.com/meshify-app/meshify/util"
 )
 
 var (
@@ -58,8 +58,12 @@ AllowedIPs = {{ StringsJoin .Current.Address ", " }}
 {{- range .Host.Current.Address }}
 Address = {{ . }}
 {{- end }}
-ListenPort = {{ .Host.Current.ListenPort }}
 PrivateKey = {{ .Host.Current.PrivateKey }}
+{{ if ne .Host.Current.ListenPort 0 -}}
+ListenPort = {{ .Host.Current.ListenPort }}
+{{- end}}
+{{ if ne .Host.Current.ListenPort 0 -}}
+{{- end}}
 {{ if ne .Host.Current.Mtu 0 -}}
 MTU = {{.Host.Current.Mtu}}
 {{- end}}
@@ -67,19 +71,20 @@ PreUp = {{ .Host.Current.PreUp }}
 PostUp = {{ .Host.Current.PostUp }}
 PreDown = {{ .Host.Current.PreDown }}
 PostDown = {{ .Host.Current.PostDown }}
-{{- range .Hosts }}
-{{ if ne .Current.Endpoint '' -}}
+{{ range .Hosts }}
+{{ if .Current.Endpoint -}}
 # {{.Name}} / {{.Email}} / Updated: {{.Updated}} / Created: {{.Created}}
 [Peer]
 PublicKey = {{ .Current.PublicKey }}
 PresharedKey = {{ .Current.PresharedKey }}
 AllowedIPs = {{ StringsJoin .Current.Address ", " }}
+Endpoint = {{ .Current.Endpoint }}
 {{- end }}
 {{ end }}`
 )
 
 // DumpWireguardConfig using go template
-func DumpWireguardConfig(host *model.Host, hosts []*model.Host) ([]byte, error) {
+func DumpWireguardConfig(host *model.Host, hosts *[]model.Host) ([]byte, error) {
 	t, err := template.New("wireguard").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(wireguardTemplate)
 	if err != nil {
 		return nil, err
@@ -87,7 +92,7 @@ func DumpWireguardConfig(host *model.Host, hosts []*model.Host) ([]byte, error) 
 
 	return dump(t, struct {
 		Host  *model.Host
-		Hosts []*model.Host
+		Hosts *[]model.Host
 	}{
 		Host:  host,
 		Hosts: hosts,
