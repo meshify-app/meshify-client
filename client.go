@@ -149,7 +149,8 @@ func UpdateMeshifyConfig(body []byte) {
 			if err != nil {
 				log.Errorf("error on template: %s", err)
 			}
-			err = util.WriteFile(msg.Config[i].MeshName+".conf", text)
+			path := GetWireguardPath()
+			err = util.WriteFile(path + msg.Config[i].MeshName+".conf", text)
 
 			err = ReloadWireguardConfig(msg.Config[i].MeshName)
 			if err == nil {

@@ -7,6 +7,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func GetWireguardPath() string {
+	return "c:\\Meshify\\"
+}
+
 func ReloadWireguardConfig(meshName string) error {
 
 	args := []string{"/uninstalltunnelservice", meshName}
