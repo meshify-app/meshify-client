@@ -62,15 +62,24 @@ PrivateKey = {{ .Host.Current.PrivateKey }}
 {{ if ne .Host.Current.ListenPort 0 -}}
 ListenPort = {{ .Host.Current.ListenPort }}
 {{- end}}
-{{ if ne .Host.Current.ListenPort 0 -}}
+{{ if .Host.Current.Endpoint -}}
+Endpoint = {{ .Host.Current.Endpoint }}
 {{- end}}
 {{ if ne .Host.Current.Mtu 0 -}}
 MTU = {{.Host.Current.Mtu}}
 {{- end}}
+{{ if .Host.Current.PreUp -}}
 PreUp = {{ .Host.Current.PreUp }}
+{{- end}}
+{{ if .Host.Current.PostUp -}}
 PostUp = {{ .Host.Current.PostUp }}
+{{- end}}
+{{ if .Host.Current.PreDown -}}
 PreDown = {{ .Host.Current.PreDown }}
+{{- end}}
+{{ if .Host.Current.PostDown -}}
 PostDown = {{ .Host.Current.PostDown }}
+{{- end}}
 {{ range .Hosts }}
 {{ if .Current.Endpoint -}}
 # {{.Name}} / {{.Email}} / Updated: {{.Updated}} / Created: {{.Created}}
@@ -79,6 +88,9 @@ PublicKey = {{ .Current.PublicKey }}
 PresharedKey = {{ .Current.PresharedKey }}
 AllowedIPs = {{ StringsJoin .Current.Address ", " }}
 Endpoint = {{ .Current.Endpoint }}
+{{ if .Current.PersistentKeepalive }}
+PersistentKeepalive = {{ .Current.PersistentKeepalive }}
+{{ end }}
 {{- end }}
 {{ end }}`
 )

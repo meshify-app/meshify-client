@@ -10,7 +10,15 @@ import (
 )
 
 func GetWireguardPath() string {
-	return "c:\\Meshify\\"
+	path, err := os.Getwd()
+	if err != nil {
+		path = "c:\\meshify\\"
+	}
+	if path[len(path)-1] != '\\' {
+		path = path + "\\"
+	}
+
+	return path
 }
 
 func ReloadWireguardConfig(meshName string) error {
@@ -27,12 +35,7 @@ func ReloadWireguardConfig(meshName string) error {
 
 	time.Sleep(1 * time.Second)
 
-	path, err := os.Getwd()
-	if path[len(path)-1] != '\\' {
-		path = path + "\\"
-	}
-
-	args = []string{"/installtunnelservice", path + meshName + ".conf"}
+	args = []string{"/installtunnelservice", GetWireguardPath() + meshName + ".conf"}
 
 	cmd = exec.Command("wireguard.exe", args...)
 	cmd.Stderr = &out
