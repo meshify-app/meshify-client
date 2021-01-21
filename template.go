@@ -62,6 +62,9 @@ PrivateKey = {{ .Host.Current.PrivateKey }}
 {{ if ne .Host.Current.ListenPort 0 -}}
 ListenPort = {{ .Host.Current.ListenPort }}
 {{- end}}
+{{ if .Host.Current.Dns }}
+DNS = {{ StringsJoin .Host.Current.Dns ", " }}
+{{ end }}
 {{ if ne .Host.Current.Mtu 0 -}}
 MTU = {{.Host.Current.Mtu}}
 {{- end}}
@@ -83,7 +86,7 @@ PostDown = {{ .Host.Current.PostDown }}
 [Peer]
 PublicKey = {{ .Current.PublicKey }}
 PresharedKey = {{ .Current.PresharedKey }}
-AllowedIPs = {{ StringsJoin .Current.Address ", " }}
+AllowedIPs = {{ StringsJoin .Current.AllowedIPs ", " }}
 Endpoint = {{ .Current.Endpoint }}
 {{ if .Current.PersistentKeepalive }}
 PersistentKeepalive = {{ .Current.PersistentKeepalive }}
