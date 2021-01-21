@@ -62,9 +62,6 @@ PrivateKey = {{ .Host.Current.PrivateKey }}
 {{ if ne .Host.Current.ListenPort 0 -}}
 ListenPort = {{ .Host.Current.ListenPort }}
 {{- end}}
-{{ if .Host.Current.Endpoint -}}
-Endpoint = {{ .Host.Current.Endpoint }}
-{{- end}}
 {{ if ne .Host.Current.Mtu 0 -}}
 MTU = {{.Host.Current.Mtu}}
 {{- end}}

@@ -137,8 +137,8 @@ func UpdateMeshifyConfig(body []byte) {
 
 		log.Infof("%v", msg)
 
-		var index int
 		for i := 0; i < len(msg.Config); i++ {
+			index := 0
 			for j := 0; j < len(msg.Config[i].Hosts); j++ {
 				if msg.Config[i].Hosts[j].Id == config.HostID {
 					index = j
@@ -150,7 +150,7 @@ func UpdateMeshifyConfig(body []byte) {
 				log.Errorf("error on template: %s", err)
 			}
 			path := GetWireguardPath()
-			err = util.WriteFile(path + msg.Config[i].MeshName+".conf", text)
+			err = util.WriteFile(path+msg.Config[i].MeshName+".conf", text)
 
 			err = ReloadWireguardConfig(msg.Config[i].MeshName)
 			if err == nil {
