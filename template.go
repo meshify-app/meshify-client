@@ -59,6 +59,9 @@ AllowedIPs = {{ StringsJoin .Current.Address ", " }}
 Address = {{ . }}
 {{- end }}
 PrivateKey = {{ .Host.Current.PrivateKey }}
+{{ if .Host.Current.PresharedKey }}
+PresharedKey = {{ .Host.Current.PresharedKey }}
+{{ end }}
 {{ if ne .Host.Current.ListenPort 0 -}}
 ListenPort = {{ .Host.Current.ListenPort }}
 {{- end}}
