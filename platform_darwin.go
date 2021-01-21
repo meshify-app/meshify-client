@@ -16,7 +16,7 @@ func ReloadWireguardConfig(meshName string) error {
 
 	args := []string{"wg-quick", "down", meshName}
 
-	cmd := exec.Command("/usr/bin/bash", args...)
+	cmd := exec.Command("/usr/local/bin/bash", args...)
 	var out bytes.Buffer
 	cmd.Stderr = &out
 	err := cmd.Run()
@@ -28,7 +28,7 @@ func ReloadWireguardConfig(meshName string) error {
 
 	args = []string{"wg-quick", "up", meshName}
 
-	cmd = exec.Command("/usr/bin/bash", args...)
+	cmd = exec.Command("/usr/local/bin/bash", args...)
 	cmd.Stderr = &out
 	err = cmd.Run()
 	if err != nil {
