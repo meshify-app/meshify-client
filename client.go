@@ -16,7 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var MeshifyHost_api_fmt = "%s/api/v1.0/host/%s/status"
+var meshifyHostAPIFmt = "%s/api/v1.0/host/%s/status"
 
 type uploadError struct {
 	respCode int
@@ -26,7 +26,8 @@ func (e *uploadError) Error() string {
 	return fmt.Sprintf("Http Error %d", e.respCode)
 }
 
-func StartHttpClient(host string, c chan []byte) {
+// StartHTTPClient starts the client polling
+func StartHTTPClient(host string, c chan []byte) {
 	log.Infof(" %s", host)
 	var client *http.Client
 
@@ -54,9 +55,9 @@ func StartHttpClient(host string, c chan []byte) {
 	for {
 		var content []byte
 		content = <-c
-		var reqUrl string = fmt.Sprintf(MeshifyHost_api_fmt, host, config.HostID)
-		log.Infof("  GET %s", reqUrl)
-		req, err := http.NewRequest("GET", reqUrl, bytes.NewBuffer(content))
+		var reqURL string = fmt.Sprintf(meshifyHostAPIFmt, host, config.HostID)
+		log.Infof("  GET %s", reqURL)
+		req, err := http.NewRequest("GET", reqURL, bytes.NewBuffer(content))
 		if err != nil {
 			return
 		}
@@ -87,9 +88,9 @@ func StartHttpClient(host string, c chan []byte) {
 		}
 
 	}
-	return
 }
 
+// UpdateMeshifyConfig updates the config from the server
 func UpdateMeshifyConfig(body []byte) {
 
 	// If the file doesn't exist create it for the first time
@@ -162,6 +163,7 @@ func UpdateMeshifyConfig(body []byte) {
 
 }
 
+// DoWork error handler
 func DoWork() {
 	var curTs int64
 
@@ -189,9 +191,9 @@ func DoWork() {
 		// Determine current timestamp (the wallclock time we'll retrieve files using)
 
 		c := make(chan []byte)
-		go StartHttpClient(config.MeshifyHost, c)
+		go StartHTTPClient(config.MeshifyHost, c)
 
-		curTs = CalculateCurrentTimestamp()
+		curTs = calculateCurrentTimestamp()
 
 		t := time.Unix(curTs, 0)
 		log.Infof("current timestamp = %v (%s)", curTs, t.UTC())
@@ -213,7 +215,7 @@ func DoWork() {
 
 				c <- b
 
-				curTs = CalculateCurrentTimestamp()
+				curTs = calculateCurrentTimestamp()
 				curTs += config.CheckInterval
 			}
 
@@ -225,7 +227,7 @@ func getStatistics() error {
 	return nil
 }
 
-func CalculateCurrentTimestamp() int64 {
+func calculateCurrentTimestamp() int64 {
 
 	now := time.Now().Unix()
 

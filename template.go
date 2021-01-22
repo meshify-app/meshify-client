@@ -53,33 +53,19 @@ AllowedIPs = {{ StringsJoin .Current.Address ", " }}
 {{- end }}
 {{ end }}`
 
-	wireguardTemplate = `# Updated: {{ .Host.Updated }} / Created: {{ .Host.Created }}
+	wireguardTemplate = `# {{.Host.Name }} / {{ .Host.Email }} / Updated: {{ .Host.Updated }} / Created: {{ .Host.Created }}
 [Interface]
 {{- range .Host.Current.Address }}
 Address = {{ . }}
 {{- end }}
 PrivateKey = {{ .Host.Current.PrivateKey }}
-{{ if ne .Host.Current.ListenPort 0 -}}
-ListenPort = {{ .Host.Current.ListenPort }}
-{{- end}}
-{{ if .Host.Current.Dns }}
-DNS = {{ StringsJoin .Host.Current.Dns ", " }}
-{{ end }}
-{{ if ne .Host.Current.Mtu 0 -}}
-MTU = {{.Host.Current.Mtu}}
-{{- end}}
-{{ if .Host.Current.PreUp -}}
-PreUp = {{ .Host.Current.PreUp }}
-{{- end}}
-{{ if .Host.Current.PostUp -}}
-PostUp = {{ .Host.Current.PostUp }}
-{{- end}}
-{{ if .Host.Current.PreDown -}}
-PreDown = {{ .Host.Current.PreDown }}
-{{- end}}
-{{ if .Host.Current.PostDown -}}
-PostDown = {{ .Host.Current.PostDown }}
-{{- end}}
+{{ if ne .Host.Current.ListenPort 0 -}}ListenPort = {{ .Host.Current.ListenPort }}{{- end}}
+{{ if .Host.Current.Dns }}DNS = {{ StringsJoin .Host.Current.Dns ", " }}{{ end }}
+{{ if ne .Host.Current.Mtu 0 -}}MTU = {{.Host.Current.Mtu}}{{- end}}
+{{ if .Host.Current.PreUp -}}PreUp = {{ .Host.Current.PreUp }}{{- end}}
+{{ if .Host.Current.PostUp -}}PostUp = {{ .Host.Current.PostUp }}{{- end}}
+{{ if .Host.Current.PreDown -}}PreDown = {{ .Host.Current.PreDown }}{{- end}}
+{{ if .Host.Current.PostDown -}}PostDown = {{ .Host.Current.PostDown }}{{- end}}
 {{ range .Hosts }}
 {{ if .Current.Endpoint -}}
 # {{.Name}} / {{.Email}} / Updated: {{.Updated}} / Created: {{.Created}}
@@ -88,9 +74,7 @@ PublicKey = {{ .Current.PublicKey }}
 PresharedKey = {{ .Current.PresharedKey }}
 AllowedIPs = {{ StringsJoin .Current.AllowedIPs ", " }}
 Endpoint = {{ .Current.Endpoint }}
-{{ if .Current.PersistentKeepalive }}
-PersistentKeepalive = {{ .Current.PersistentKeepalive }}
-{{ end }}
+{{ if .Current.PersistentKeepalive }}PersistentKeepalive = {{ .Current.PersistentKeepalive }}{{ end }}
 {{- end }}
 {{ end }}`
 )

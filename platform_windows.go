@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// GetWireguardPath finds wireguard location for the given platform
 func GetWireguardPath() string {
 	path, err := os.Getwd()
 	if err != nil {
@@ -21,6 +22,7 @@ func GetWireguardPath() string {
 	return path
 }
 
+// ReloadWireguardConfig restarts the wireguard service on the given platform
 func ReloadWireguardConfig(meshName string) error {
 
 	args := []string{"/uninstalltunnelservice", meshName}

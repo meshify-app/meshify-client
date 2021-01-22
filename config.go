@@ -19,11 +19,11 @@ var config struct {
 	Debug         bool
 }
 
-type ConfigError struct {
+type configError struct {
 	message string
 }
 
-func (err *ConfigError) Error() string {
+func (err *configError) Error() string {
 	return err.message
 }
 
@@ -40,7 +40,7 @@ func loadConfig() error {
 	MeshifyHost := flag.String("server", "", "Meshify server to connect to")
 	CheckInterval := flag.Int64("interval", 0, "Time interval between maps.  Default is 5 (5 seconds)")
 	quiet := flag.Bool("quiet", false, "Do not output to stdout (only to syslog)")
-	source_str := flag.String("source", "", "Source address for http client requests")
+	sourceStr := flag.String("source", "", "Source address for http client requests")
 	flag.Parse()
 
 	// Open the config file specified
@@ -68,15 +68,15 @@ func loadConfig() error {
 	}
 
 	if config.MeshifyHost == "" {
-		return &ConfigError{"A meshify-client.config.json file with a MeshifyHost parameter is required"}
+		return &configError{"A meshify-client.config.json file with a MeshifyHost parameter is required"}
 	}
 
 	if *CheckInterval != 0 {
 		config.CheckInterval = *CheckInterval
 	}
 
-	if *source_str != "" {
-		config.SourceAddress = *source_str
+	if *sourceStr != "" {
+		config.SourceAddress = *sourceStr
 	}
 
 	config.sourceAddr, err = net.ResolveTCPAddr("tcp", config.SourceAddress+":0")
