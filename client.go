@@ -73,7 +73,7 @@ func StartHTTPClient(host string, c chan []byte) {
 				if err != nil {
 					log.Errorf("error reading body %v", err)
 				}
-				log.Infof("%s", string(body))
+				log.Debugf("%s", string(body))
 				UpdateMeshifyConfig(body)
 			}
 		} else {
@@ -136,7 +136,7 @@ func UpdateMeshifyConfig(body []byte) {
 			log.Errorf("Error reading message from server")
 		}
 
-		log.Infof("%v", msg)
+		log.Debugf("%v", msg)
 
 		for i := 0; i < len(msg.Config); i++ {
 			index := 0

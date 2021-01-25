@@ -12,7 +12,7 @@ func main() {
 
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stderr)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 
 	err := loadConfig()
 	if err != nil {
@@ -20,7 +20,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Infof("Started")
+	log.Infof("Meshify Control Plane Started")
 
 	DoWork()
 
