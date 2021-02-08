@@ -55,9 +55,10 @@ AllowedIPs = {{ StringsJoin .Current.Address ", " }}
 
 	wireguardTemplate = `# {{.Host.Name }} / {{ .Host.Email }} / Updated: {{ .Host.Updated }} / Created: {{ .Host.Created }}
 [Interface]
-{{- range .Host.Current.Address }}
+{{ if .Host.Enable }}
+  {{- range .Host.Current.Address }}
 Address = {{ . }}
-{{- end }}
+  {{- end }}
 PrivateKey = {{ .Host.Current.PrivateKey }}
 {{ if ne .Host.Current.ListenPort 0 -}}ListenPort = {{ .Host.Current.ListenPort }}{{- end}}
 {{ if .Host.Current.Dns }}DNS = {{ StringsJoin .Host.Current.Dns ", " }}{{ end }}
@@ -67,6 +68,7 @@ PrivateKey = {{ .Host.Current.PrivateKey }}
 {{ if .Host.Current.PreDown -}}PreDown = {{ .Host.Current.PreDown }}{{- end}}
 {{ if .Host.Current.PostDown -}}PostDown = {{ .Host.Current.PostDown }}{{- end}}
 {{ range .Hosts }}
+{{ if .Enable }}
 {{ if .Current.Endpoint -}}
 # {{.Name}} / {{.Email}} / Updated: {{.Updated}} / Created: {{.Created}}
 [Peer]
@@ -76,6 +78,8 @@ AllowedIPs = {{ StringsJoin .Current.AllowedIPs ", " }}
 Endpoint = {{ .Current.Endpoint }}
 {{ if .Current.PersistentKeepalive }}PersistentKeepalive = {{ .Current.PersistentKeepalive }}{{ end }}
 {{- end }}
+{{ end }}
+{{ end }}
 {{ end }}`
 )
 
