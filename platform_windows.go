@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"os/exec"
 	"time"
@@ -27,13 +28,18 @@ func ReloadWireguardConfig(meshName string) error {
 
 	args := []string{"/uninstalltunnelservice", meshName}
 
-	cmd := exec.Command("wireguard.exe", args...)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "wireguard.exe", args...)
 	var out bytes.Buffer
 	cmd.Stderr = &out
-	err := cmd.Run()
+	err := cmd.Start()
 	if err != nil {
 		log.Errorf("Error reloading WireGuard: %v (%s)", err, out.String())
 	}
+
+	err = cmd.Wait()
 
 	time.Sleep(1 * time.Second)
 
