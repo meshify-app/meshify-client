@@ -53,9 +53,9 @@ AllowedIPs = {{ StringsJoin .Current.Address ", " }}
 {{- end }}
 {{ end }}`
 
-	wireguardTemplate = `# {{.Host.Name }} / {{ .Host.Email }} / Updated: {{ .Host.Updated }} / Created: {{ .Host.Created }}
+	wireguardTemplate = `{{ if .Host.Enable }}
+# {{.Host.Name }} / {{ .Host.Email }} / Updated: {{ .Host.Updated }} / Created: {{ .Host.Created }}
 [Interface]
-{{ if .Host.Enable }}
   {{- range .Host.Current.Address }}
 Address = {{ . }}
   {{- end }}
