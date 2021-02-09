@@ -139,12 +139,16 @@ func UpdateMeshifyConfig(body []byte) {
 		log.Debugf("%v", msg)
 
 		for i := 0; i < len(msg.Config); i++ {
-			index := 0
+			index := -1
 			for j := 0; j < len(msg.Config[i].Hosts); j++ {
 				if msg.Config[i].Hosts[j].Id == config.HostID {
 					index = j
 					break
 				}
+			}
+			if index == -1 {
+				log.Errorf("Error reading message %v", msg)
+				return
 			}
 			text, err := DumpWireguardConfig(&msg.Config[i].Hosts[index], &(msg.Config[i].Hosts))
 			if err != nil {
