@@ -184,14 +184,6 @@ func DoWork() {
 
 	go func() {
 
-		// On startup load the current dnsfilter configuration
-		//		err := ReloadDnsfilterConfig()
-		//		if err == nil {
-		//			log.Infof("Successfully loaded existing dnsfilter configuration")
-		//		} else {
-		//			log.Errorf("Error loading existing dnsfilter configuration: %v", err)
-		//		}
-
 		// Determine current timestamp (the wallclock time we'll retrieve files using)
 
 		c := make(chan []byte)
@@ -201,8 +193,6 @@ func DoWork() {
 
 		t := time.Unix(curTs, 0)
 		log.Infof("current timestamp = %v (%s)", curTs, t.UTC())
-
-		curTs += config.CheckInterval
 
 		for {
 			time.Sleep(100 * time.Millisecond)
@@ -233,12 +223,6 @@ func getStatistics() error {
 
 func calculateCurrentTimestamp() int64 {
 
-	now := time.Now().Unix()
-
-	if config.CheckInterval == 0 {
-		return now
-	} else {
-		return now - (now % config.CheckInterval)
-	}
+	return time.Now().Unix()
 
 }
