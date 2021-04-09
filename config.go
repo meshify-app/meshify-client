@@ -45,7 +45,7 @@ func loadConfig() error {
 
 	// Open the config file specified
 
-	file, err := os.Open(*configPath)
+	file, err := os.Open(GetDataPath() + *configPath)
 	if err != nil && *MeshifyHost == "" {
 		return err
 	}

@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"os"
 	"os/exec"
 	"time"
 
@@ -12,20 +11,27 @@ import (
 
 // GetWireguardPath finds wireguard location for the given platform
 func GetWireguardPath() string {
-	path, err := os.Getwd()
-	if err != nil {
-		path = "c:\\meshify\\"
-	}
-	if path[len(path)-1] != '\\' {
-		path = path + "\\"
-	}
 
+	path := GetDataPath() + "Wireguard\\"
+	/*	path, err := exePath()
+		if err != nil {
+			path = "c:\\meshify\\"
+		}
+		if path[len(path)-1] != '\\' {
+			path = path + "\\"
+		}
+	*/
 	return path
+}
+
+func GetDataPath() string {
+	return "C:\\ProgramData\\Meshify\\"
 }
 
 // ReloadWireguardConfig restarts the wireguard service on the given platform
 func ReloadWireguardConfig(meshName string) error {
 
+	//elog.Info(1, fmt.Sprintf("Reloading mesh %s", meshName))
 	args := []string{"/uninstalltunnelservice", meshName}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -52,6 +58,7 @@ func ReloadWireguardConfig(meshName string) error {
 		log.Errorf("Error reloading WireGuard: %v (%s)", err, out.String())
 		return err
 	}
+	//elog.Info(1, fmt.Sprintf("Reloaded mesh %s successfully", meshName))
 
 	return nil
 

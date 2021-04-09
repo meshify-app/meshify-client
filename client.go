@@ -94,14 +94,14 @@ func StartHTTPClient(host string, c chan []byte) {
 func UpdateMeshifyConfig(body []byte) {
 
 	// If the file doesn't exist create it for the first time
-	if _, err := os.Stat("meshify.conf"); os.IsNotExist(err) {
-		file, err := os.OpenFile("meshify.conf", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	if _, err := os.Stat(GetDataPath() + "meshify.conf"); os.IsNotExist(err) {
+		file, err := os.OpenFile(GetDataPath()+"meshify.conf", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 		if err == nil {
 			file.Close()
 		}
 	}
 
-	file, err := os.Open("meshify.conf")
+	file, err := os.Open(GetDataPath() + "meshify.conf")
 
 	if err != nil {
 		log.Errorf("Error opening config file %v", err)
@@ -119,7 +119,7 @@ func UpdateMeshifyConfig(body []byte) {
 		log.Info("No meshify.conf changes requested")
 		return
 	} else {
-		file, err := os.OpenFile("meshify.conf", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+		file, err := os.OpenFile(GetDataPath()+"meshify.conf", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 		if err != nil {
 			log.Errorf("Error opening meshify.conf for write: %v", err)
 			return
