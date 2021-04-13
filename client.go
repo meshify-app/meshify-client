@@ -149,7 +149,9 @@ func UpdateMeshifyConfig(body []byte) {
 			if index == -1 {
 				log.Errorf("Error reading message %v", msg)
 			} else {
-				text, err := DumpWireguardConfig(&msg.Config[i].Hosts[index], &(msg.Config[i].Hosts))
+				host := msg.Config[i].Hosts[index]
+				msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
+				text, err := DumpWireguardConfig(&host, &(msg.Config[i].Hosts))
 				if err != nil {
 					log.Errorf("error on template: %s", err)
 				}
