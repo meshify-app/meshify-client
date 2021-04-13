@@ -68,17 +68,13 @@ PrivateKey = {{ .Host.Current.PrivateKey }}
 {{ if .Host.Current.PreDown -}}PreDown = {{ .Host.Current.PreDown }}{{- end}}
 {{ if .Host.Current.PostDown -}}PostDown = {{ .Host.Current.PostDown }}{{- end}}
 {{ range .Hosts }}
-{{ if .Enable }}
-{{ if .Current.Endpoint -}}
 # {{.Name}} / {{.Email}} / Updated: {{.Updated}} / Created: {{.Created}}
 [Peer]
 PublicKey = {{ .Current.PublicKey }}
 PresharedKey = {{ .Current.PresharedKey }}
 AllowedIPs = {{ StringsJoin .Current.AllowedIPs ", " }}
-Endpoint = {{ .Current.Endpoint }}
+{{ if .Current.Endpoint -}}Endpoint = {{ .Current.Endpoint }} {{- end }}
 {{ if .Current.PersistentKeepalive }}PersistentKeepalive = {{ .Current.PersistentKeepalive }}{{ end }}
-{{- end }}
-{{ end }}
 {{ end }}
 {{ end }}`
 )

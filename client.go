@@ -141,25 +141,25 @@ func UpdateMeshifyConfig(body []byte) {
 		for i := 0; i < len(msg.Config); i++ {
 			index := -1
 			for j := 0; j < len(msg.Config[i].Hosts); j++ {
-				if msg.Config[i].Hosts[j].Id == config.HostID {
+				if msg.Config[i].Hosts[j].HostGroup == config.HostID {
 					index = j
 					break
 				}
 			}
 			if index == -1 {
 				log.Errorf("Error reading message %v", msg)
-				return
-			}
-			text, err := DumpWireguardConfig(&msg.Config[i].Hosts[index], &(msg.Config[i].Hosts))
-			if err != nil {
-				log.Errorf("error on template: %s", err)
-			}
-			path := GetWireguardPath()
-			err = util.WriteFile(path+msg.Config[i].MeshName+".conf", text)
+			} else {
+				text, err := DumpWireguardConfig(&msg.Config[i].Hosts[index], &(msg.Config[i].Hosts))
+				if err != nil {
+					log.Errorf("error on template: %s", err)
+				}
+				path := GetWireguardPath()
+				err = util.WriteFile(path+msg.Config[i].MeshName+".conf", text)
 
-			err = ReloadWireguardConfig(msg.Config[i].MeshName)
-			if err == nil {
-				log.Infof("meshify.conf reloaded.  New config:\n%s", body)
+				err = ReloadWireguardConfig(msg.Config[i].MeshName)
+				if err == nil {
+					log.Infof("meshify.conf reloaded.  New config:\n%s", body)
+				}
 			}
 		}
 
