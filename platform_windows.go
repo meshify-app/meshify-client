@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os/exec"
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/windows/svc"
 )
 
 // GetWireguardPath finds wireguard location for the given platform
@@ -61,5 +63,46 @@ func ReloadWireguardConfig(meshName string) error {
 	//elog.Info(1, fmt.Sprintf("Reloaded mesh %s successfully", meshName))
 
 	return nil
+
+}
+
+// Windows Main functions
+
+func InService() (bool, error) {
+	inService, err := svc.IsWindowsService()
+
+	if err != nil {
+		log.Fatalf("failed to determine if we are running in service: %v", err)
+	}
+	return inService, err
+}
+
+func RunService(svcName string) {
+	runService(svcName, false)
+}
+
+func ServiceManager(cmd string) {
+	switch cmd {
+	case "debug":
+		runService(svcName, true)
+		return
+	case "install":
+		err = installService(svcName, "Meshify Agent")
+	case "remove":
+		err = removeService(svcName)
+	case "start":
+		err = startService(svcName)
+	case "stop":
+		err = controlService(svcName, svc.Stop, svc.Stopped)
+	case "pause":
+		err = controlService(svcName, svc.Pause, svc.Paused)
+	case "continue":
+		err = controlService(svcName, svc.Continue, svc.Running)
+	default:
+		usage(fmt.Sprintf("invalid command %s", cmd))
+	}
+	if err != nil {
+		log.Fatalf("failed to %s %s: %v", cmd, svcName, err)
+	}
 
 }
