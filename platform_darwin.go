@@ -46,7 +46,7 @@ func ReloadWireguardConfig(meshName string) error {
 	return true, nil
 }
 
-func RunService(name string) {
+func RunService(svcName string, name string) {
 	DoWork()
 
 	sigs := make(chan os.Signal, 1)

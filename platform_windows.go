@@ -81,7 +81,8 @@ func RunService(svcName string) {
 	runService(svcName, false)
 }
 
-func ServiceManager(cmd string) {
+func ServiceManager(svcName string, cmd string) {
+	var err error
 	switch cmd {
 	case "debug":
 		runService(svcName, true)

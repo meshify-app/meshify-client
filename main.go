@@ -38,7 +38,7 @@ func main() {
 	if len(os.Args) > 1 {
 		cmd := strings.ToLower(os.Args[1])
 
-		ServiceManager(cmd)
+		ServiceManager(svcName, cmd)
 
 		return
 	} else {
