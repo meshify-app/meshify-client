@@ -1,0 +1,10 @@
+description "meshify-client"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+respawn
+respawn limit 5 60
+
+script
+  exec /usr/bin/meshify-client
+end script
