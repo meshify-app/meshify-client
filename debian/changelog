@@ -2,4 +2,32 @@ meshify-client (1.0.0) unstable; urgency=low
 
   * initial build for meshify-client
 
- -- Alan Graham <alan@meshify.app> , Thu Apr 22 05:11:52 UTC 2021
+ -- Alan Graham <alan@meshify.app>, Thu Apr 22 05:11:52 UTC 2021
+
+- change
+- add debian directory
+- windows platform fixes...unified meshify client.
+- platform fixes
+- add Enable back in
+- end-to-end fixes
+- wireguard config updates
+- updates for windows
+- adjust check interval logic
+- handle incomplete messages
+- Cleanup disabled client config
+- Support enabling/disabling clients
+- Fix problems associated with cmds hanging
+- cleanup logging
+- cleanup from go-lint
+- oops PresharedKey in interface section is invalid
+- fix PresharedKey
+- fix dns
+- remove Endpoint from Interface section
+- windows fixes, persistentKeepalive
+- fix darnwin
+- updates for windows, darwin
+- fix linux support
+- end-to-end client working all platforms
+- Fix templates
+- new Message type
+- initial commit
