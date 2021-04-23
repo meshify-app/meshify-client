@@ -31,7 +31,7 @@ func main() {
 
 	inService, err := InService()
 	if inService {
-		RunService(svcName)
+		RunService(svcName, "")
 		return
 	}
 

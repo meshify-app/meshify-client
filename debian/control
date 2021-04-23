@@ -8,7 +8,7 @@ Build-Depends: debhelper (>= 9),
                golang,
                pkg-config
 Standards-Version: 3.9.8
-Vcs-Git: https://github.com/meshify-app/meshify-client
+Vcs-Git: git@github.com:meshify-app/meshify-client.git
 Vcs-Browser: https://github.com/meshify-app/meshify-client
 
 Package: meshify-client

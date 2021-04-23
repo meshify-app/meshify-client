@@ -1,6 +1,6 @@
 {
-    "MeshifyHost": "https://dev.meshify.app",
-    "HostID": "a5eb19a5-479a-49d3-b33f-875d208504b6",
+    "MeshifyHost": "https://my.meshify.app",
+    "HostID": "9b921bb2-edd2-4490-bf05-5faebd982912",
     "CheckInterval" : 10,
     "SourceAddress" : "0.0.0.0",
     "quiet" : true,

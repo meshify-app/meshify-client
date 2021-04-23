@@ -1,4 +1,4 @@
-version: '2'
+version: '3.3'
 services:
   meshify-client-build:
     container_name: meshify-client-build
@@ -12,3 +12,10 @@ services:
     environment:
       - USERID
       - GROUPID
+    secrets:
+      - user_ssh_key
+secrets:
+
+  user_ssh_key:
+
+    file: ~/.ssh/id_rsa

@@ -65,6 +65,5 @@ func RunService(svcName string, name string) {
 
 }
 
-func ServiceManager(cmd string) {
-	
+func ServiceManager(svcName string, cmd string) {
 }

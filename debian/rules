@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
-export DH_GOPKG := github.corp.dyndns.com/pacman/pacman-client
+export DH_GOPKG := github.com/meshify-app/meshify-client
 
 %:
 	dh $@ --buildsystem=golang --with=golang
