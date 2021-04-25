@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 
@@ -103,7 +104,8 @@ func ServiceManager(svcName string, cmd string) {
 		usage(fmt.Sprintf("invalid command %s", cmd))
 	}
 	if err != nil {
-		log.Fatalf("failed to %s %s: %v", cmd, svcName, err)
+		log.Infof("failed to %s %s: %v", cmd, svcName, nil)
+		os.Exit(0)
 	}
 
 }
