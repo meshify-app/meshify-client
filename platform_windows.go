@@ -31,6 +31,28 @@ func GetDataPath() string {
 	return "C:\\ProgramData\\Meshify\\"
 }
 
+// DisableHost stops the service
+func DisableHost(meshName string) error {
+
+	serviceName := fmt.Sprintf("WireguardTunnel$%s", meshName)
+	args := []string{"stop", serviceName}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "sc.exe", args...)
+	var out bytes.Buffer
+	cmd.Stderr = &out
+	err := cmd.Start()
+	if err != nil {
+		log.Errorf("Error stopping mesh %s: %v (%s)", meshName, err, out.String())
+	}
+
+	err = cmd.Wait()
+
+	return err
+}
+
 // ReloadWireguardConfig restarts the wireguard service on the given platform
 func ReloadWireguardConfig(meshName string) error {
 

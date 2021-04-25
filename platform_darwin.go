@@ -16,6 +16,21 @@ func GetDataPath() string {
 	return "/usr/local/etc/meshify/"
 }
 
+func DisableHost(meshName string) error {
+	args := []string{"wg-quick", "down", meshName}
+
+	cmd := exec.Command("/usr/local/bin/bash", args...)
+	var out bytes.Buffer
+	cmd.Stderr = &out
+	err := cmd.Run()
+	if err != nil {
+		log.Errorf("Error reloading WireGuard: %v (%s)", err, out.String())
+	}
+
+	return err
+
+}
+
 func ReloadWireguardConfig(meshName string) error {
 
 	args := []string{"wg-quick", "down", meshName}
@@ -34,7 +49,10 @@ func ReloadWireguardConfig(meshName string) error {
 
 	cmd = exec.Command("/usr/local/bin/bash", args...)
 	cmd.Stderr = &out
-	err = cmd.Run()
+	go func() {
+		err = cmd.Run()
+	}()
+
 	if err != nil {
 		log.Errorf("Error reloading WireGuard: %v (%s)", err, out.String())
 		return err

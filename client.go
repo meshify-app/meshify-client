@@ -158,10 +158,16 @@ func UpdateMeshifyConfig(body []byte) {
 				path := GetWireguardPath()
 				err = util.WriteFile(path+msg.Config[i].MeshName+".conf", text)
 
-				err = ReloadWireguardConfig(msg.Config[i].MeshName)
-				if err == nil {
-					log.Infof("meshify.conf reloaded.  New config:\n%s", body)
+				if host.Enable == false {
+					err = DisableHost(msg.Config[i].MeshName)
+					log.Infof("Mesh %s is disabled.  Stopped service if running.", msg.Config[i].MeshName)
+				} else {
+					err = ReloadWireguardConfig(msg.Config[i].MeshName)
+					if err == nil {
+						log.Infof("meshify.conf reloaded.  New config:\n%s", body)
+					}
 				}
+
 			}
 		}
 

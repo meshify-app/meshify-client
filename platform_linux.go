@@ -19,6 +19,19 @@ func GetDataPath() string {
 	return "/etc/meshify/"
 }
 
+func DisableHost(meshName string) error {
+	args := []string{"wg-quick", "down", meshName}
+
+	cmd := exec.Command("/bin/bash", args...)
+	var out bytes.Buffer
+	cmd.Stderr = &out
+	err := cmd.Run()
+	if err != nil {
+		log.Errorf("Error stopping mesh %s: %v (%s)", meshName, err, out.String())
+	}
+	return err
+}
+
 func ReloadWireguardConfig(meshName string) error {
 
 	args := []string{"wg-quick", "down", meshName}
