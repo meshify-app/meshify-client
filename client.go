@@ -61,6 +61,7 @@ func StartHTTPClient(host string, c chan []byte) {
 		if err != nil {
 			return
 		}
+		req.Header.Set("X-API-KEY", config.ApiKey)
 		req.Header.Set("User-Agent", "meshify-client/1.0")
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := client.Do(req)

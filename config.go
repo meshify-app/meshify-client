@@ -12,6 +12,7 @@ var config struct {
 	Quiet         bool
 	MeshifyHost   string
 	HostID        string
+	ApiKey        string
 	CheckInterval int64
 	tls           tls.Config
 	SourceAddress string
