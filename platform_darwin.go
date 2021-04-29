@@ -2,7 +2,10 @@ package main
 
 import (
 	"bytes"
+        "os"
 	"os/exec"
+        "os/signal"
+        "syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -60,7 +63,9 @@ func ReloadWireguardConfig(meshName string) error {
 
 	return nil
 
-}func InService() (bool, error) {
+}
+
+func InService() (bool, error) {
 	return true, nil
 }
 
