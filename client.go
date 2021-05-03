@@ -152,6 +152,10 @@ func UpdateMeshifyConfig(body []byte) {
 			} else {
 				host := msg.Config[i].Hosts[index]
 				msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
+
+				// Configure UPnP as needed
+				ConfigureUPnP(host)
+
 				text, err := DumpWireguardConfig(&host, &(msg.Config[i].Hosts))
 				if err != nil {
 					log.Errorf("error on template: %s", err)

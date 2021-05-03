@@ -35,7 +35,7 @@ func loadConfig() error {
 	config.CheckInterval = 5
 	config.SourceAddress = "0.0.0.0"
 	config.tls.MinVersion = tls.VersionTLS10
-	config.MeshifyHost = "https://dev.meshify.app/"
+	config.MeshifyHost = "https://my.meshify.app/"
 
 	configPath := flag.String("C", "meshify-client.config.json", "Path to configuration file")
 	MeshifyHost := flag.String("server", "", "Meshify server to connect to")
