@@ -110,7 +110,10 @@ func handleQueries(w dns.ResponseWriter, r *dns.Msg) {
 				x := (offset + i) % len(addrs)
 				ip, _, _ := net.ParseCIDR(addrs[x])
 
-				rr = &dns.A{Hdr: dns.RR_Header{Name: r.Question[0].Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 300},
+				rr = &dns.A{Hdr: dns.RR_Header{Name: r.Question[0].Name,
+					Rrtype: dns.TypeA,
+					Class:  dns.ClassINET,
+					Ttl:    300},
 					A: ip.To4(),
 				}
 				m.Answer = append(m.Answer, rr)
