@@ -201,6 +201,7 @@ func DoWork() {
 
 		c := make(chan []byte)
 		go StartHTTPClient(config.MeshifyHost, c)
+		go StartDNS()
 
 		curTs = calculateCurrentTimestamp()
 
