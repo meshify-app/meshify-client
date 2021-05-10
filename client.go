@@ -139,6 +139,12 @@ func UpdateMeshifyConfig(body []byte) {
 
 		log.Debugf("%v", msg)
 
+		// Get our local subnets, called here to avoid duplication
+		subnets, err := GetLocalSubnets()
+		if err != nil {
+			log.Errorf("GetLocalSubnets, err = ", err)
+		}
+
 		for i := 0; i < len(msg.Config); i++ {
 			index := -1
 			for j := 0; j < len(msg.Config[i].Hosts); j++ {
@@ -155,6 +161,23 @@ func UpdateMeshifyConfig(body []byte) {
 
 				// Configure UPnP as needed
 				ConfigureUPnP(host)
+
+				// If any of the AllowedIPs contain our subnet, remove that entry
+				for k := 0; k < len(msg.Config[i].Hosts); k++ {
+					allowed := msg.Config[i].Hosts[k].Current.AllowedIPs
+					for l := 0; l < len(allowed); l++ {
+						inSubnet := false
+						_, s, _ := net.ParseCIDR(allowed[l])
+						for _, subnet := range subnets {
+							if subnet.Contains(s.IP) == true {
+								inSubnet = true
+							}
+						}
+						if inSubnet {
+							msg.Config[i].Hosts[k].Current.AllowedIPs = append(allowed[:l], allowed[l+1:]...)
+						}
+					}
+				}
 
 				text, err := DumpWireguardConfig(&host, &(msg.Config[i].Hosts))
 				if err != nil {
@@ -178,6 +201,31 @@ func UpdateMeshifyConfig(body []byte) {
 
 	}
 
+}
+
+func GetLocalSubnets() ([]*net.IPNet, error) {
+	ifaces, err := net.Interfaces()
+
+	if err != nil {
+		return nil, err
+	}
+
+	subnets := make([]*net.IPNet, 0)
+
+	for _, i := range ifaces {
+		addrs, err := i.Addrs()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, addr := range addrs {
+			switch v := addr.(type) {
+			case *net.IPNet:
+				subnets = append(subnets, v)
+			}
+		}
+	}
+	return subnets, nil
 }
 
 // DoWork error handler

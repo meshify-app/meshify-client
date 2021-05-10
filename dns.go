@@ -100,6 +100,7 @@ func handleQueries(w dns.ResponseWriter, r *dns.Msg) {
 	q := strings.ToLower(r.Question[0].Name)
 	q = strings.Trim(q, ".")
 
+	log.Infof("DNS Query: %s", q)
 	addrs := DnsTable[q]
 	if addrs == nil {
 		m.Rcode = dns.RcodeServerFailure
@@ -108,16 +109,34 @@ func handleQueries(w dns.ResponseWriter, r *dns.Msg) {
 			offset := rand.Intn(len(addrs))
 			for i := 0; i < len(addrs); i++ {
 				x := (offset + i) % len(addrs)
-				ip, _, _ := net.ParseCIDR(addrs[x])
-
-				rr = &dns.A{Hdr: dns.RR_Header{Name: r.Question[0].Name,
-					Rrtype: dns.TypeA,
-					Class:  dns.ClassINET,
-					Ttl:    300},
-					A: ip.To4(),
+				if strings.Contains(addrs[x], ":") == false {
+					ip, _, _ := net.ParseCIDR(addrs[x])
+					rr = &dns.A{Hdr: dns.RR_Header{Name: r.Question[0].Name,
+						Rrtype: dns.TypeA,
+						Class:  dns.ClassINET,
+						Ttl:    300},
+						A: ip.To4(),
+					}
+					m.Answer = append(m.Answer, rr)
+					m.Rcode = dns.RcodeSuccess
 				}
-				m.Answer = append(m.Answer, rr)
-				m.Rcode = dns.RcodeSuccess
+			}
+		}
+		if r.Question[0].Qtype == dns.TypeAAAA {
+			offset := rand.Intn(len(addrs))
+			for i := 0; i < len(addrs); i++ {
+				x := (offset + i) % len(addrs)
+				if strings.Contains(addrs[x], ":") == true {
+					ip, _, _ := net.ParseCIDR(addrs[x])
+					rr = &dns.A{Hdr: dns.RR_Header{Name: r.Question[0].Name,
+						Rrtype: dns.TypeA,
+						Class:  dns.ClassINET,
+						Ttl:    300},
+						A: ip.To4(),
+					}
+					m.Answer = append(m.Answer, rr)
+					m.Rcode = dns.RcodeSuccess
+				}
 			}
 		}
 	}
