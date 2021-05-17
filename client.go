@@ -160,7 +160,7 @@ func UpdateMeshifyConfig(body []byte) {
 				msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
 
 				// Configure UPnP as needed
-				ConfigureUPnP(host)
+				go ConfigureUPnP(host)
 
 				// If any of the AllowedIPs contain our subnet, remove that entry
 				for k := 0; k < len(msg.Config[i].Hosts); k++ {
@@ -190,7 +190,7 @@ func UpdateMeshifyConfig(body []byte) {
 					err = DisableHost(msg.Config[i].MeshName)
 					log.Infof("Mesh %s is disabled.  Stopped service if running.", msg.Config[i].MeshName)
 				} else {
-					err = ReloadWireguardConfig(msg.Config[i].MeshName)
+					err = ReloadWireguardConfig(msg.Config[i].MeshName, true)
 					if err == nil {
 						log.Infof("meshify.conf reloaded.  New config:\n%s", body)
 					}
@@ -228,6 +228,93 @@ func GetLocalSubnets() ([]*net.IPNet, error) {
 	return subnets, nil
 }
 
+func StartBackgroundRefreshService() {
+
+	for {
+
+		file, err := os.Open(GetDataPath() + "meshify.conf")
+		if err != nil {
+			log.Errorf("Error opening meshify.conf for read: %v", err)
+			return
+		}
+		defer file.Close()
+		bytes, err := ioutil.ReadAll(file)
+		if err != nil {
+			log.Errorf("Error reading meshify config file: %v", err)
+			return
+		}
+		var msg model.Message
+		err = json.Unmarshal(bytes, &msg)
+		if err != nil {
+			log.Errorf("Error reading message from server")
+		}
+
+		log.Debugf("%v", msg)
+
+		// Get our local subnets, called here to avoid duplication
+		subnets, err := GetLocalSubnets()
+		if err != nil {
+			log.Errorf("GetLocalSubnets, err = ", err)
+		}
+
+		for i := 0; i < len(msg.Config); i++ {
+			index := -1
+			for j := 0; j < len(msg.Config[i].Hosts); j++ {
+				if msg.Config[i].Hosts[j].HostGroup == config.HostID {
+					index = j
+					break
+				}
+			}
+			if index == -1 {
+				log.Errorf("Error reading message %v", msg)
+			} else {
+				host := msg.Config[i].Hosts[index]
+				msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
+
+				// Configure UPnP as needed
+				go ConfigureUPnP(host)
+
+				// If any of the AllowedIPs contain our subnet, remove that entry
+				for k := 0; k < len(msg.Config[i].Hosts); k++ {
+					allowed := msg.Config[i].Hosts[k].Current.AllowedIPs
+					for l := 0; l < len(allowed); l++ {
+						inSubnet := false
+						_, s, _ := net.ParseCIDR(allowed[l])
+						for _, subnet := range subnets {
+							if subnet.Contains(s.IP) == true {
+								inSubnet = true
+							}
+						}
+						if inSubnet {
+							msg.Config[i].Hosts[k].Current.AllowedIPs = append(allowed[:l], allowed[l+1:]...)
+						}
+					}
+				}
+
+				text, err := DumpWireguardConfig(&host, &(msg.Config[i].Hosts))
+				if err != nil {
+					log.Errorf("error on template: %s", err)
+				}
+				path := GetWireguardPath()
+				err = util.WriteFile(path+msg.Config[i].MeshName+".conf", text)
+
+				if host.Enable == false {
+					err = DisableHost(msg.Config[i].MeshName)
+					log.Infof("Mesh %s is disabled.  Stopped service if running.", msg.Config[i].MeshName)
+				} else {
+					err = ReloadWireguardConfig(msg.Config[i].MeshName, false)
+					if err == nil {
+						log.Infof("meshify.conf reloaded.  New config:\n%s", bytes)
+					}
+				}
+
+			}
+		}
+		// Do this startup process every hour.  Keeps UPnP ports active, handles laptop sleeps, etc.
+		time.Sleep(60 * time.Minute)
+	}
+}
+
 // DoWork error handler
 func DoWork() {
 	var curTs int64
@@ -250,6 +337,7 @@ func DoWork() {
 		c := make(chan []byte)
 		go StartHTTPClient(config.MeshifyHost, c)
 		go StartDNS()
+		go StartBackgroundRefreshService()
 
 		curTs = calculateCurrentTimestamp()
 

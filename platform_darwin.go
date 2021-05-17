@@ -2,10 +2,10 @@ package main
 
 import (
 	"bytes"
-        "os"
+	"os"
 	"os/exec"
-        "os/signal"
-        "syscall"
+	"os/signal"
+	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -34,26 +34,27 @@ func DisableHost(meshName string) error {
 
 }
 
-func ReloadWireguardConfig(meshName string) error {
+func ReloadWireguardConfig(meshName string, bounce bool) error {
 
-	args := []string{"wg-quick", "down", meshName}
+	if bounce {
+		args := []string{"wg-quick", "down", meshName}
 
-	cmd := exec.Command("/usr/local/bin/bash", args...)
-	var out bytes.Buffer
-	cmd.Stderr = &out
-	err := cmd.Run()
-	if err != nil {
-		log.Errorf("Error reloading WireGuard: %v (%s)", err, out.String())
+		cmd := exec.Command("/usr/local/bin/bash", args...)
+		var out bytes.Buffer
+		cmd.Stderr = &out
+		err := cmd.Run()
+		if err != nil {
+			log.Errorf("Error reloading WireGuard: %v (%s)", err, out.String())
+		}
+		time.Sleep(1 * time.Second)
 	}
 
-	time.Sleep(1 * time.Second)
+	args := []string{"wg-quick", "up", meshName}
 
-	args = []string{"wg-quick", "up", meshName}
-
-	cmd = exec.Command("/usr/local/bin/bash", args...)
+	cmd := exec.Command("/usr/local/bin/bash", args...)
 	cmd.Stderr = &out
 	go func() {
-		err = cmd.Run()
+		err := cmd.Run()
 	}()
 
 	if err != nil {
