@@ -31,50 +31,10 @@ func GetDataPath() string {
 	return "C:\\ProgramData\\Meshify\\"
 }
 
-// DisableHost stops the service
-func DisableHost(meshName string) error {
+// StartWireguard restarts the wireguard tunnel on the given platform
+func StartWireguard(meshName string) error {
 
-	serviceName := fmt.Sprintf("WireguardTunnel$%s", meshName)
-	args := []string{"stop", serviceName}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctx, "sc.exe", args...)
-	var out bytes.Buffer
-	cmd.Stderr = &out
-	err := cmd.Start()
-	if err != nil {
-		log.Errorf("Error stopping mesh %s: %v (%s)", meshName, err, out.String())
-	}
-
-	err = cmd.Wait()
-
-	return err
-}
-
-// ReloadWireguardConfig restarts the wireguard service on the given platform
-func ReloadWireguardConfig(meshName string, bounce bool) error {
-
-	//elog.Info(1, fmt.Sprintf("Reloading mesh %s", meshName))
-	if bounce {
-		args := []string{"/uninstalltunnelservice", meshName}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		cmd := exec.CommandContext(ctx, "wireguard.exe", args...)
-		var out bytes.Buffer
-		cmd.Stderr = &out
-		err := cmd.Start()
-		if err != nil {
-			log.Errorf("Error reloading WireGuard: %v (%s)", err, out.String())
-		}
-
-		err = cmd.Wait()
-
-		time.Sleep(1 * time.Second)
-	}
+	time.Sleep(1 * time.Second)
 
 	args := []string{"/installtunnelservice", GetWireguardPath() + meshName + ".conf"}
 
@@ -83,12 +43,33 @@ func ReloadWireguardConfig(meshName string, bounce bool) error {
 	cmd.Stderr = &out
 	err := cmd.Run()
 	if err != nil {
-		log.Errorf("Error reloading WireGuard: %v (%s)", err, out.String())
+		log.Errorf("Error starting WireGuard: %v (%s)", err, out.String())
 		return err
 	}
-	//elog.Info(1, fmt.Sprintf("Reloaded mesh %s successfully", meshName))
 
 	return nil
+
+}
+
+// StopWireguard stops the wireguard tunnel on the given platform
+func StopWireguard(meshName string) error {
+
+	args := []string{"/uninstalltunnelservice", meshName}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "wireguard.exe", args...)
+	var out bytes.Buffer
+	cmd.Stderr = &out
+	err := cmd.Start()
+	if err != nil {
+		log.Errorf("Error stopping WireGuard: %v (%s)", err, out.String())
+	}
+
+	err = cmd.Wait()
+
+	return err
 
 }
 

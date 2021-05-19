@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"syscall"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -19,35 +18,7 @@ func GetDataPath() string {
 	return "/usr/local/etc/meshify/"
 }
 
-func DisableHost(meshName string) error {
-	args := []string{"wg-quick", "down", meshName}
-
-	cmd := exec.Command("/usr/local/bin/bash", args...)
-	var out bytes.Buffer
-	cmd.Stderr = &out
-	err := cmd.Run()
-	if err != nil {
-		log.Errorf("Error reloading WireGuard: %v (%s)", err, out.String())
-	}
-
-	return err
-
-}
-
-func ReloadWireguardConfig(meshName string, bounce bool) error {
-
-	if bounce {
-		args := []string{"wg-quick", "down", meshName}
-
-		cmd := exec.Command("/usr/local/bin/bash", args...)
-		var out bytes.Buffer
-		cmd.Stderr = &out
-		err := cmd.Run()
-		if err != nil {
-			log.Errorf("Error reloading WireGuard: %v (%s)", err, out.String())
-		}
-		time.Sleep(1 * time.Second)
-	}
+func Startireguard(meshName string) error {
 
 	args := []string{"wg-quick", "up", meshName}
 
@@ -62,7 +33,22 @@ func ReloadWireguardConfig(meshName string, bounce bool) error {
 		return err
 	}
 
-	return nil
+	return err
+
+}
+func StopWireguard(meshName string) error {
+
+	args := []string{"wg-quick", "down", meshName}
+
+	cmd := exec.Command("/usr/local/bin/bash", args...)
+	var out bytes.Buffer
+	cmd.Stderr = &out
+	err := cmd.Run()
+	if err != nil {
+		log.Errorf("Error reloading WireGuard: %v (%s)", err, out.String())
+	}
+
+	return err
 
 }
 

@@ -183,14 +183,17 @@ func UpdateMeshifyConfig(body []byte) {
 				if err != nil {
 					log.Errorf("error on template: %s", err)
 				}
+
+				StopWireguard(msg.Config[i].MeshName)
+
 				path := GetWireguardPath()
 				err = util.WriteFile(path+msg.Config[i].MeshName+".conf", text)
 
 				if host.Enable == false {
-					err = DisableHost(msg.Config[i].MeshName)
+					// Host was disabled when we stopped wireguard above
 					log.Infof("Mesh %s is disabled.  Stopped service if running.", msg.Config[i].MeshName)
 				} else {
-					err = ReloadWireguardConfig(msg.Config[i].MeshName, true)
+					err = StartWireguard(msg.Config[i].MeshName)
 					if err == nil {
 						log.Infof("meshify.conf reloaded.  New config:\n%s", body)
 					}
@@ -299,10 +302,10 @@ func StartBackgroundRefreshService() {
 				err = util.WriteFile(path+msg.Config[i].MeshName+".conf", text)
 
 				if host.Enable == false {
-					err = DisableHost(msg.Config[i].MeshName)
+					err = StopWireguard(msg.Config[i].MeshName)
 					log.Infof("Mesh %s is disabled.  Stopped service if running.", msg.Config[i].MeshName)
 				} else {
-					err = ReloadWireguardConfig(msg.Config[i].MeshName, false)
+					err = StartWireguard(msg.Config[i].MeshName)
 					if err == nil {
 						log.Infof("meshify.conf reloaded.  New config:\n%s", bytes)
 					}
