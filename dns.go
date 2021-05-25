@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"math/rand"
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/meshify-app/meshify/model"
@@ -16,7 +18,9 @@ import (
 
 var (
 	ServerTable map[string]string
+	ServerLock  sync.Mutex
 	DnsTable    map[string][]string
+	DnsLock     sync.Mutex
 )
 
 func StartDNS() error {
@@ -49,6 +53,12 @@ func StartDNS() error {
 		return err
 	}
 
+	ServerLock.Lock()
+	defer ServerLock.Unlock()
+
+	DnsLock.Lock()
+	defer DnsLock.Unlock()
+
 	for i := 0; i < len(msg.Config); i++ {
 		index := -1
 		for j := 0; j < len(msg.Config[i].Hosts); j++ {
@@ -77,7 +87,7 @@ func StartDNS() error {
 
 			if len(host.Current.Address[0]) > 3 {
 				address := host.Current.Address[0][:len(host.Current.Address[0])-3] + ":53"
-				server := &dns.Server{Addr: address, Net: "udp", TsigSecret: nil, ReusePort: false}
+				server := &dns.Server{Addr: address, Net: "udp", TsigSecret: nil, ReusePort: true}
 				log.Infof("Starting DNS Server on %s", address)
 				go func() {
 					if err := server.ListenAndServe(); err != nil {
@@ -87,6 +97,53 @@ func StartDNS() error {
 			}
 		}
 	}
+
+	return nil
+}
+
+func UpdateDNS(msg model.Message) error {
+
+	var serverTable map[string]string
+	serverTable = make(map[string]string, 0)
+
+	var dnsTable map[string][]string
+	dnsTable = make((map[string][]string), 0)
+
+	for i := 0; i < len(msg.Config); i++ {
+		index := -1
+		for j := 0; j < len(msg.Config[i].Hosts); j++ {
+			if msg.Config[i].Hosts[j].HostGroup == config.HostID {
+				index = j
+				break
+			}
+		}
+		if index == -1 {
+			log.Errorf("Error reading message for DNS update: %v", msg)
+			return errors.New("Error reading message")
+		} else {
+			host := msg.Config[i].Hosts[index]
+			name := strings.ToLower(host.Name)
+			dnsTable[name] = append(dnsTable[name], host.Current.Address...)
+			msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
+			for j := 0; j < len(msg.Config[i].Hosts); j++ {
+				n := strings.ToLower(msg.Config[i].Hosts[j].Name)
+				dnsTable[n] = append(dnsTable[n], msg.Config[i].Hosts[j].Current.Address...)
+				if msg.Config[i].Hosts[j].Current.Endpoint != "" {
+					ip_port := msg.Config[i].Hosts[j].Current.Endpoint
+					parts := strings.Split(ip_port, ":")
+					ip := parts[0]
+					serverTable[ip] = ip
+				}
+			}
+		}
+	}
+	DnsLock.Lock()
+	DnsTable = dnsTable
+	DnsLock.Unlock()
+
+	ServerLock.Lock()
+	ServerTable = serverTable
+	ServerLock.Unlock()
 
 	return nil
 }

@@ -117,7 +117,6 @@ func UpdateMeshifyConfig(body []byte) {
 
 	// compare the body to the current config and make no changes if they are the same
 	if bytes.Equal(conf, body) {
-		log.Info("No meshify.conf changes requested")
 		return
 	} else {
 		file, err := os.OpenFile(GetDataPath()+"meshify.conf", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
@@ -138,6 +137,11 @@ func UpdateMeshifyConfig(body []byte) {
 		}
 
 		log.Debugf("%v", msg)
+
+		err = UpdateDNS(msg)
+		if err != nil {
+			log.Errorf("Error updating DNS configuration: %v", err)
+		}
 
 		// Get our local subnets, called here to avoid duplication
 		subnets, err := GetLocalSubnets()
