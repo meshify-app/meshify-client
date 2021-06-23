@@ -138,7 +138,10 @@ func UpdateMeshifyConfig(body []byte) {
 
 		log.Debugf("%v", msg)
 
-		err = UpdateDNS(msg)
+		// make a copy of the message since UpdateDNS will alter it.
+		var msg2 model.Message
+		json.Unmarshal(body, &msg2)
+		err = UpdateDNS(msg2)
 		if err != nil {
 			log.Errorf("Error updating DNS configuration: %v", err)
 		}
@@ -244,8 +247,8 @@ func StartBackgroundRefreshService() {
 			log.Errorf("Error opening meshify.conf for read: %v", err)
 			return
 		}
-		defer file.Close()
 		bytes, err := ioutil.ReadAll(file)
+		file.Close()
 		if err != nil {
 			log.Errorf("Error reading meshify config file: %v", err)
 			return
