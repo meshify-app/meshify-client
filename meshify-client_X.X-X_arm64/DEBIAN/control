@@ -1,0 +1,5 @@
+Package: meshify-client
+Version: 1.8.0
+Architecture: arm64
+Maintainer: Meshify.app Inc <info@meshify.app>
+Description: Meshify-Client of debian distributions
