@@ -18,6 +18,11 @@ func GetDataPath() string {
 	return "/usr/local/etc/meshify/"
 }
 
+// Return the platform
+func Platform() string {
+	return "MacOS"
+}
+
 func Startireguard(meshName string) error {
 
 	args := []string{"wg-quick", "up", meshName}

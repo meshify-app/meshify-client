@@ -31,6 +31,11 @@ func GetDataPath() string {
 	return "C:\\ProgramData\\Meshify\\"
 }
 
+// Return the platform
+func Platform() string {
+	return "Windows"
+}
+
 // StartWireguard restarts the wireguard tunnel on the given platform
 func StartWireguard(meshName string) error {
 

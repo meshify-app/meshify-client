@@ -22,9 +22,8 @@ func main() {
 	}
 
 	err = loadConfig()
-	if err != nil && len(os.Args) < 1 {
-		log.Fatalf("%v", err)
-		os.Exit(1)
+	if err != nil && len(os.Args) < 2 {
+		log.Error("Could not load config,  will load when it is ready.")
 	}
 
 	const svcName = "meshify"

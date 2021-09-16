@@ -18,6 +18,11 @@ func GetDataPath() string {
 	return "/etc/meshify/"
 }
 
+// Return the platform
+func Platform() string {
+	return "Linux"
+}
+
 func StartWireguard(meshName string) error {
 
 	args := []string{"wg-quick", "up", meshName}

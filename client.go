@@ -27,7 +27,8 @@ func (e *uploadError) Error() string {
 }
 
 // StartHTTPClient starts the client polling
-func StartHTTPClient(host string, c chan []byte) {
+func StartHTTPClient(c chan []byte) {
+	host := config.MeshifyHost
 	log.Infof(" %s", host)
 	var client *http.Client
 
@@ -55,6 +56,12 @@ func StartHTTPClient(host string, c chan []byte) {
 	for {
 		var content []byte
 		content = <-c
+		if !config.loaded {
+			err := loadConfig()
+			if err != nil {
+				log.Errorf("Failed to load config.")
+			}
+		}
 		var reqURL string = fmt.Sprintf(meshifyHostAPIFmt, host, config.HostID)
 		log.Infof("  GET %s", reqURL)
 		req, err := http.NewRequest("GET", reqURL, bytes.NewBuffer(content))
@@ -345,7 +352,7 @@ func DoWork() {
 		// Determine current timestamp (the wallclock time we'll retrieve files using)
 
 		c := make(chan []byte)
-		go StartHTTPClient(config.MeshifyHost, c)
+		go StartHTTPClient(c)
 		go StartDNS()
 		go StartBackgroundRefreshService()
 
