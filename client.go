@@ -18,14 +18,6 @@ import (
 
 var meshifyHostAPIFmt = "%s/api/v1.0/host/%s/status"
 
-type uploadError struct {
-	respCode int
-}
-
-func (e *uploadError) Error() string {
-	return fmt.Sprintf("Http Error %d", e.respCode)
-}
-
 // StartHTTPClient starts the client polling
 func StartHTTPClient(c chan []byte) {
 	host := config.MeshifyHost
@@ -54,8 +46,7 @@ func StartHTTPClient(c chan []byte) {
 	}
 
 	for {
-		var content []byte
-		content = <-c
+		content := <-c
 		if !config.loaded {
 			err := loadConfig()
 			if err != nil {
@@ -68,9 +59,11 @@ func StartHTTPClient(c chan []byte) {
 		if err != nil {
 			return
 		}
-		req.Header.Set("X-API-KEY", config.ApiKey)
-		req.Header.Set("User-Agent", "meshify-client/1.0")
-		req.Header.Set("Content-Type", "application/json")
+		if req != nil {
+			req.Header.Set("X-API-KEY", config.ApiKey)
+			req.Header.Set("User-Agent", "meshify-client/1.0")
+			req.Header.Set("Content-Type", "application/json")
+		}
 		resp, err := client.Do(req)
 		if err == nil {
 			if resp.StatusCode != 200 {
@@ -183,7 +176,7 @@ func UpdateMeshifyConfig(body []byte) {
 						inSubnet := false
 						_, s, _ := net.ParseCIDR(allowed[l])
 						for _, subnet := range subnets {
-							if subnet.Contains(s.IP) == true {
+							if subnet.Contains(s.IP) {
 								inSubnet = true
 							}
 						}
@@ -202,8 +195,11 @@ func UpdateMeshifyConfig(body []byte) {
 
 				path := GetWireguardPath()
 				err = util.WriteFile(path+msg.Config[i].MeshName+".conf", text)
+				if err != nil {
+					log.Errorf("Error writing file %s : %s", path+msg.Config[i].MeshName+".conf", err)
+				}
 
-				if host.Enable == false {
+				if !host.Enable {
 					// Host was disabled when we stopped wireguard above
 					log.Infof("Mesh %s is disabled.  Stopped service if running.", msg.Config[i].MeshName)
 				} else {
@@ -298,7 +294,7 @@ func StartBackgroundRefreshService() {
 						inSubnet := false
 						_, s, _ := net.ParseCIDR(allowed[l])
 						for _, subnet := range subnets {
-							if subnet.Contains(s.IP) == true {
+							if subnet.Contains(s.IP) {
 								inSubnet = true
 							}
 						}
@@ -314,9 +310,12 @@ func StartBackgroundRefreshService() {
 				}
 				path := GetWireguardPath()
 				err = util.WriteFile(path+msg.Config[i].MeshName+".conf", text)
+				if err != nil {
+					log.Errorf("Error writing file %s : %s", path+msg.Config[i].MeshName+".conf", err)
+				}
 
-				if host.Enable == false {
-					err = StopWireguard(msg.Config[i].MeshName)
+				if !host.Enable {
+					StopWireguard(msg.Config[i].MeshName)
 					log.Infof("Mesh %s is disabled.  Stopped service if running.", msg.Config[i].MeshName)
 				} else {
 					err = StartWireguard(msg.Config[i].MeshName)

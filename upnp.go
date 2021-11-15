@@ -8,7 +8,7 @@ import (
 
 func ConfigureUPnP(host model.Host) error {
 
-	if host.Current.UPnP == true {
+	if host.Current.UPnP {
 		router, err := upnp.Discover()
 
 		if err != nil {

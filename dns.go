@@ -24,13 +24,13 @@ var (
 )
 
 func StartDNS() error {
-	ServerTable = make(map[string]string, 0)
-	DnsTable = make((map[string][]string), 0)
+	ServerTable = make(map[string]string)
+	DnsTable = make(map[string][]string)
 
 	dns.HandleFunc(".", handleQueries)
 
 	var conf []byte
-	for exists := false; exists != true; {
+	for exists := false; !exists; {
 		file, err := os.Open(GetDataPath() + "meshify.conf")
 		if err != nil {
 			time.Sleep(time.Second)
@@ -103,11 +103,8 @@ func StartDNS() error {
 
 func UpdateDNS(msg model.Message) error {
 
-	var serverTable map[string]string
-	serverTable = make(map[string]string, 0)
-
-	var dnsTable map[string][]string
-	dnsTable = make((map[string][]string), 0)
+	serverTable := make(map[string]string)
+	dnsTable := make(map[string][]string)
 
 	for i := 0; i < len(msg.Config); i++ {
 		index := -1
@@ -166,7 +163,7 @@ func handleQueries(w dns.ResponseWriter, r *dns.Msg) {
 			offset := rand.Intn(len(addrs))
 			for i := 0; i < len(addrs); i++ {
 				x := (offset + i) % len(addrs)
-				if strings.Contains(addrs[x], ":") == false {
+				if !strings.Contains(addrs[x], ":") {
 					ip, _, _ := net.ParseCIDR(addrs[x])
 					rr = &dns.A{Hdr: dns.RR_Header{Name: r.Question[0].Name,
 						Rrtype: dns.TypeA,
@@ -183,7 +180,7 @@ func handleQueries(w dns.ResponseWriter, r *dns.Msg) {
 			offset := rand.Intn(len(addrs))
 			for i := 0; i < len(addrs); i++ {
 				x := (offset + i) % len(addrs)
-				if strings.Contains(addrs[x], ":") == true {
+				if strings.Contains(addrs[x], ":") {
 					ip, _, _ := net.ParseCIDR(addrs[x])
 					rr = &dns.A{Hdr: dns.RR_Header{Name: r.Question[0].Name,
 						Rrtype: dns.TypeA,

@@ -40,7 +40,7 @@ func loadConfig() error {
 	config.tls.MinVersion = tls.VersionTLS10
 	config.MeshifyHost = "https://my.meshify.app"
 
-	if config.init == false {
+	if !config.init {
 		config.init = true
 		config.path = flag.String("C", "meshify-client.config.json", "Path to configuration file")
 		MeshifyHost := flag.String("server", "", "Meshify server to connect to")
@@ -65,7 +65,7 @@ func loadConfig() error {
 			}
 		}
 
-		if *quiet == true {
+		if *quiet {
 			config.Quiet = *quiet
 		}
 

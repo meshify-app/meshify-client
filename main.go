@@ -28,7 +28,7 @@ func main() {
 
 	const svcName = "meshify"
 
-	inService, err := InService()
+	inService, _ := InService()
 	if inService {
 		RunService(svcName)
 		return

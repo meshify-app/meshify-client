@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build windows
 // +build windows
 
 package main
@@ -39,7 +40,7 @@ loop:
 	for {
 		select {
 		case <-tick:
-			break
+			elog.Info(1, "tick")
 		case c := <-r:
 			switch c.Cmd {
 			case svc.Interrogate:
@@ -160,7 +161,7 @@ func exePath() (string, error) {
 			if !fi.Mode().IsDir() {
 				return p, nil
 			}
-			err = fmt.Errorf("%s is directory", p)
+			return "", fmt.Errorf("%s is directory", p)
 		}
 	}
 	return "", err
