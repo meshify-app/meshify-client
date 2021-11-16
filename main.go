@@ -26,6 +26,9 @@ func main() {
 		log.Error("Could not load config,  will load when it is ready.")
 	}
 
+	KeyInitialize()
+	KeyLoad()
+
 	const svcName = "meshify"
 
 	inService, _ := InService()

@@ -14,9 +14,11 @@ import (
 	"github.com/meshify-app/meshify/model"
 	util "github.com/meshify-app/meshify/util"
 	log "github.com/sirupsen/logrus"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 var meshifyHostAPIFmt = "%s/api/v1.0/host/%s/status"
+var meshifyHostUpdateAPIFmt = "%s/api/v1.0/host/%s"
 
 // StartHTTPClient starts the client polling
 func StartHTTPClient(c chan []byte) {
@@ -89,6 +91,73 @@ func StartHTTPClient(c chan []byte) {
 		}
 
 	}
+}
+
+func UpdateMeshifyHost(host model.Host) error {
+
+	log.Infof("UPDATING HOST: %v", host)
+	server := config.MeshifyHost
+	var client *http.Client
+
+	if strings.HasPrefix(server, "http:") {
+		client = &http.Client{
+			Timeout: time.Second * 10,
+		}
+	} else {
+		// Create a transport like http.DefaultTransport, but with the configured LocalAddr
+		transport := &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			Dial: (&net.Dialer{
+				Timeout:   5 * time.Second,
+				KeepAlive: 60 * time.Second,
+				LocalAddr: config.sourceAddr,
+			}).Dial,
+			TLSHandshakeTimeout: 10 * time.Second,
+		}
+		client = &http.Client{
+			Transport: transport,
+		}
+
+	}
+
+	var reqURL string = fmt.Sprintf(meshifyHostUpdateAPIFmt, server, host.Id)
+	log.Infof("  PATCH %s", reqURL)
+	content, err := json.Marshal(host)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("PATCH", reqURL, bytes.NewBuffer(content))
+	if err != nil {
+		return err
+	}
+	if req != nil {
+		req.Header.Set("X-API-KEY", host.APIKey)
+		req.Header.Set("User-Agent", "meshify-client/1.0")
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	resp, err := client.Do(req)
+	if err == nil {
+		if resp.StatusCode != 200 {
+			log.Errorf("PATCH Error: Response %v", resp.StatusCode)
+		} else {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Errorf("error reading body %v", err)
+			}
+			log.Infof("%s", string(body))
+		}
+	}
+
+	if resp != nil {
+		resp.Body.Close()
+	}
+	if req != nil {
+		req.Body.Close()
+	}
+
+	return nil
 }
 
 // UpdateMeshifyConfig updates the config from the server
@@ -184,6 +253,38 @@ func UpdateMeshifyConfig(body []byte) {
 							msg.Config[i].Hosts[k].Current.AllowedIPs = append(allowed[:l], allowed[l+1:]...)
 						}
 					}
+				}
+
+				// Check to see if we have the private key
+
+				key, found := KeyLookup(host.Current.PublicKey)
+				if !found {
+					KeyAdd(host.Current.PublicKey, host.Current.PrivateKey)
+					err = KeySave()
+					if err != nil {
+						log.Errorf("Error saving key: %s %s", host.Current.PublicKey, host.Current.PrivateKey)
+					}
+					key, _ = KeyLookup(host.Current.PublicKey)
+				}
+
+				// If the private key is blank create a new one and update the server
+				if key == "" {
+					// delete the old public key
+					KeyDelete(host.Current.PublicKey)
+					wg, _ := wgtypes.GeneratePrivateKey()
+					host.Current.PrivateKey = wg.String()
+					host.Current.PublicKey = wg.PublicKey().String()
+					KeyAdd(host.Current.PublicKey, host.Current.PrivateKey)
+					KeySave()
+
+					host2 := host
+					host2.Current.PrivateKey = ""
+
+					// Update meshify with the new public key
+					UpdateMeshifyHost(host2)
+
+				} else {
+					host.Current.PrivateKey = key
 				}
 
 				text, err := DumpWireguardConfig(&host, &(msg.Config[i].Hosts))
@@ -302,6 +403,37 @@ func StartBackgroundRefreshService() {
 							msg.Config[i].Hosts[k].Current.AllowedIPs = append(allowed[:l], allowed[l+1:]...)
 						}
 					}
+				}
+				// Check to see if we have the private key
+
+				key, found := KeyLookup(host.Current.PublicKey)
+				if !found {
+					KeyAdd(host.Current.PublicKey, host.Current.PrivateKey)
+					err = KeySave()
+					if err != nil {
+						log.Errorf("Error saving key: %s %s", host.Current.PublicKey, host.Current.PrivateKey)
+					}
+					key, _ = KeyLookup(host.Current.PublicKey)
+				}
+
+				// If the private key is blank create a new one and update the server
+				if key == "" {
+					// delete the old public key
+					KeyDelete(host.Current.PublicKey)
+					wg, _ := wgtypes.GeneratePrivateKey()
+					host.Current.PrivateKey = wg.String()
+					host.Current.PublicKey = wg.PublicKey().String()
+					KeyAdd(host.Current.PublicKey, host.Current.PrivateKey)
+					KeySave()
+
+					host2 := host
+					host2.Current.PrivateKey = ""
+
+					// Update meshify with the new public key
+					UpdateMeshifyHost(host2)
+
+				} else {
+					host.Current.PrivateKey = key
 				}
 
 				text, err := DumpWireguardConfig(&host, &(msg.Config[i].Hosts))
