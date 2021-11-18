@@ -1,0 +1,27 @@
+[Unit]
+Description=Meshify
+ConditionPathExists=/usr/bin/meshify-client
+After=network.target
+ 
+[Service]
+Type=simple
+User=root
+Group=root
+LimitNOFILE=1024000
+
+Restart=on-failure
+RestartSec=10
+#startLimitIntervalSec=60
+
+WorkingDirectory=/etc/meshify
+ExecStart=/usr/bin/meshify-client
+
+# make sure log directory exists and owned by syslog
+PermissionsStartOnly=true
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=meshify
+ 
+[Install]
+WantedBy=multi-user.target
+
