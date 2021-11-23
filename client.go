@@ -25,6 +25,7 @@ func StartHTTPClient(c chan []byte) {
 	host := config.MeshifyHost
 	log.Infof(" %s", host)
 	var client *http.Client
+	var etag string
 
 	if strings.HasPrefix(host, "http:") {
 		client = &http.Client{
@@ -65,10 +66,13 @@ func StartHTTPClient(c chan []byte) {
 			req.Header.Set("X-API-KEY", config.ApiKey)
 			req.Header.Set("User-Agent", "meshify-client/1.0")
 			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("If-None-Match", etag)
 		}
 		resp, err := client.Do(req)
 		if err == nil {
-			if resp.StatusCode != 200 {
+
+			if resp.StatusCode == 304 {
+			} else if resp.StatusCode != 200 {
 				log.Errorf("Response Error Code: %v, sleeping 10 seconds", resp.StatusCode)
 				time.Sleep(10 * time.Second)
 			} else {
@@ -77,6 +81,7 @@ func StartHTTPClient(c chan []byte) {
 					log.Errorf("error reading body %v", err)
 				}
 				log.Debugf("%s", string(body))
+				etag = resp.Header.Get("ETag")
 				UpdateMeshifyConfig(body)
 			}
 		} else {
