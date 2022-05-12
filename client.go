@@ -297,21 +297,40 @@ func UpdateMeshifyConfig(body []byte) {
 					log.Errorf("error on template: %s", err)
 				}
 
-				StopWireguard(msg.Config[i].MeshName)
-
+				// Check the current file and if it's an exact match, do not bounce the service
 				path := GetWireguardPath()
-				err = util.WriteFile(path+msg.Config[i].MeshName+".conf", text)
+
+				file, err := os.Open(path + msg.Config[i].MeshName + ".conf")
 				if err != nil {
-					log.Errorf("Error writing file %s : %s", path+msg.Config[i].MeshName+".conf", err)
+					log.Errorf("Error opening meshify.conf for read: %v", err)
+					return
 				}
 
-				if !host.Enable {
-					// Host was disabled when we stopped wireguard above
-					log.Infof("Mesh %s is disabled.  Stopped service if running.", msg.Config[i].MeshName)
+				bits, err := ioutil.ReadAll(file)
+				file.Close()
+				if err != nil {
+					log.Errorf("Error reading meshify config file: %v", err)
+					return
+				}
+
+				if bytes.Equal(bits, text) {
+					log.Infof("*** SKIPPING %s *** No changes!", msg.Config[i].MeshName)
 				} else {
-					err = StartWireguard(msg.Config[i].MeshName)
-					if err == nil {
-						log.Infof("meshify.conf reloaded.  New config:\n%s", body)
+					StopWireguard(msg.Config[i].MeshName)
+
+					err = util.WriteFile(path+msg.Config[i].MeshName+".conf", text)
+					if err != nil {
+						log.Errorf("Error writing file %s : %s", path+msg.Config[i].MeshName+".conf", err)
+					}
+
+					if !host.Enable {
+						// Host was disabled when we stopped wireguard above
+						log.Infof("Mesh %s is disabled.  Stopped service if running.", msg.Config[i].MeshName)
+					} else {
+						err = StartWireguard(msg.Config[i].MeshName)
+						if err == nil {
+							log.Infof("meshify.conf reloaded.  New config:\n%s", body)
+						}
 					}
 				}
 

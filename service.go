@@ -40,7 +40,7 @@ loop:
 	for {
 		select {
 		case <-tick:
-			elog.Info(1, "tick")
+			// elog.Info(1, "tick") remove constantly ticking in windows application event log
 		case c := <-r:
 			switch c.Cmd {
 			case svc.Interrogate:
