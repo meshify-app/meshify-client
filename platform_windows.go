@@ -36,6 +36,16 @@ func Platform() string {
 	return "Windows"
 }
 
+func GetStats() (string, error) {
+	args := []string{"show", "all", "transfer"}
+	out, err := exec.Command("wg.exe", args...).Output()
+	if err != nil {
+		log.Errorf("Error getting stats: %v (%s)", err, string(out))
+		return "", err
+	}
+	return string(out), nil
+}
+
 // StartWireguard restarts the wireguard tunnel on the given platform
 func StartWireguard(meshName string) error {
 
