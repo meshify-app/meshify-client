@@ -36,8 +36,8 @@ func Platform() string {
 	return "Windows"
 }
 
-func GetStats() (string, error) {
-	args := []string{"show", "all", "transfer"}
+func GetStats(mesh string) (string, error) {
+	args := []string{"show", mesh, "transfer"}
 	out, err := exec.Command("wg.exe", args...).Output()
 	if err != nil {
 		log.Errorf("Error getting stats: %v (%s)", err, string(out))

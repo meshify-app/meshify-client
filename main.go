@@ -47,7 +47,6 @@ func main() {
 		log.Infof("Meshify Control Plane Started")
 
 		DoWork()
-		go startHTTPd()
 
 		sigs := make(chan os.Signal, 1)
 		done := make(chan bool, 1)

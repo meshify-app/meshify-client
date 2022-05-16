@@ -481,6 +481,7 @@ func StartBackgroundRefreshService() {
 				}
 
 			}
+			StartDNS()
 		}
 		// Do this startup process every hour.  Keeps UPnP ports active, handles laptop sleeps, etc.
 		time.Sleep(60 * time.Minute)
@@ -507,6 +508,7 @@ func DoWork() {
 		// Determine current timestamp (the wallclock time we'll retrieve files using)
 
 		c := make(chan []byte)
+		go startHTTPd()
 		go StartHTTPClient(c)
 		go StartDNS()
 		go StartBackgroundRefreshService()

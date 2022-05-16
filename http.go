@@ -1,10 +1,14 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -23,15 +27,52 @@ func ReadFile(path string) (string, error) {
 	return string(b), nil
 }
 
+type Metrics struct {
+	Send int64
+	Recv int64
+}
+
+func MakeStats(name string, body string) (string, error) {
+	meshes := make(map[string]Metrics, 11)
+	lines := strings.Split(body, ("\n"))
+	for i := 0; i < len(lines); i++ {
+		parts := strings.Fields(lines[i])
+		if len(parts) < 3 {
+			break
+		}
+		send, _ := strconv.ParseInt(parts[1], 10, 0)
+		recv, _ := strconv.ParseInt(parts[2], 10, 0)
+
+		mesh, found := meshes[name]
+		if !found {
+			mesh = Metrics{Send: 0, Recv: 0}
+		}
+		mesh.Send += send
+		mesh.Recv += recv
+		meshes[name] = mesh
+	}
+	result, err := json.Marshal(meshes)
+	return string(result), err
+}
+
 func stats_handler(w http.ResponseWriter, req *http.Request) {
 	log.Infof("stats_handler")
-	body, err := GetStats()
-
+	// /stats/
+	parts := strings.Split(req.URL.Path, "/")
+	mesh := parts[2]
+	log.Infof("GetStats(%s)", mesh)
+	body, err := GetStats(mesh)
 	if err != nil {
 		log.Error(err)
 	}
 
-	io.WriteString(w, body)
+	stats, err := MakeStats(mesh, body)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Infof("Stats: %s", stats)
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	io.WriteString(w, stats)
 }
 
 func startHTTPd() {
@@ -42,6 +83,8 @@ func startHTTPd() {
 	err := http.ListenAndServe(":53280", nil)
 	if err != nil {
 		log.Error(err)
+		elog.Error(1, fmt.Sprintf("Error listening on 53280: %s", err))
 	}
+	elog.Info(1, "ListenAndServe executed")
 
 }

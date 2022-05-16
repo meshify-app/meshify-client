@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net"
@@ -196,5 +197,26 @@ func handleQueries(w dns.ResponseWriter, r *dns.Msg) {
 	}
 
 	w.WriteMsg(m)
+	go LogMessage(q)
+
+}
+
+// This sends a multicast message with the DNS query to anyone listening
+func LogMessage(query string) {
+
+	raddr, err := net.ResolveUDPAddr("udp", "224.1.1.1:53281")
+	if err != nil {
+		return
+	}
+
+	conn, err := net.DialUDP("udp", nil, raddr)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	conn.WriteMsgUDP([]byte(query), nil, raddr)
+
+	fmt.Fprint(conn, query)
 
 }
