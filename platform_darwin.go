@@ -23,8 +23,8 @@ func Platform() string {
 	return "MacOS"
 }
 
-func GetStats() (string, error) {
-	args := []string{"wg", "show", "all", "transfer"}
+func GetStats(mesh string) (string, error) {
+	args := []string{"wg", "show", mesh, "transfer"}
 
 	out, err := exec.Command("/usr/local/bin/bash", args...).Output()
 	if err != nil {
@@ -32,7 +32,7 @@ func GetStats() (string, error) {
 		return "", err
 	}
 
-	return out, nil
+	return string(out), nil
 }
 
 func Startireguard(meshName string) error {

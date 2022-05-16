@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -83,8 +82,6 @@ func startHTTPd() {
 	err := http.ListenAndServe(":53280", nil)
 	if err != nil {
 		log.Error(err)
-		elog.Error(1, fmt.Sprintf("Error listening on 53280: %s", err))
 	}
-	elog.Info(1, "ListenAndServe executed")
 
 }
