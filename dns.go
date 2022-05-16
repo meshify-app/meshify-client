@@ -204,7 +204,7 @@ func handleQueries(w dns.ResponseWriter, r *dns.Msg) {
 // This sends a multicast message with the DNS query to anyone listening
 func LogMessage(query string) {
 
-	raddr, err := net.ResolveUDPAddr("udp", "224.1.1.1:53281")
+	raddr, err := net.ResolveUDPAddr("udp", "224.1.1.1:25264")
 	if err != nil {
 		return
 	}
