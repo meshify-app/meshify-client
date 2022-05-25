@@ -301,7 +301,7 @@ func UpdateMeshifyConfig(body []byte) {
 				path := GetWireguardPath()
 
 				force := false
-				bits []byte
+				var bits []byte
 
 				file, err := os.Open(path + msg.Config[i].MeshName + ".conf")
 				if err != nil {
