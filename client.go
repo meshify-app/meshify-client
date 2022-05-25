@@ -300,20 +300,24 @@ func UpdateMeshifyConfig(body []byte) {
 				// Check the current file and if it's an exact match, do not bounce the service
 				path := GetWireguardPath()
 
+				force := false
+				bits []byte
+
 				file, err := os.Open(path + msg.Config[i].MeshName + ".conf")
 				if err != nil {
 					log.Errorf("Error opening meshify.conf for read: %v", err)
-					return
+					force = true
+				} else {
+					bits, err = ioutil.ReadAll(file)
+					file.Close()
+					if err != nil {
+						log.Errorf("Error reading meshify config file: %v", err)
+						force = true
+					}	
 				}
 
-				bits, err := ioutil.ReadAll(file)
-				file.Close()
-				if err != nil {
-					log.Errorf("Error reading meshify config file: %v", err)
-					return
-				}
 
-				if bytes.Equal(bits, text) {
+				if !force && bytes.Equal(bits, text) {
 					log.Infof("*** SKIPPING %s *** No changes!", msg.Config[i].MeshName)
 				} else {
 					StopWireguard(msg.Config[i].MeshName)
