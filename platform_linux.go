@@ -23,16 +23,16 @@ func Platform() string {
 	return "Linux"
 }
 
-func GetStats() (string, error) {
-	args := []string{"wg", "show", "all", "transfer"}
+func GetStats(mesh string) (string, error) {
+	args := []string{"show", mesh, "transfer"}
 
-	out, err := exec.Command("/bin/bash", args...).Output()
+	out, err := exec.Command("wg", args...).Output()
 	if err != nil {
 		log.Errorf("Error getting statistics: %v (%s)", err, string(out))
 		return "", err
 	}
 
-	return out, nil
+	return string(out), nil
 }
 
 func StartWireguard(meshName string) error {
