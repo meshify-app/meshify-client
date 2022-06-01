@@ -39,8 +39,8 @@ func MakeStats(name string, body string) (string, error) {
 		if len(parts) < 3 {
 			break
 		}
-		send, _ := strconv.ParseInt(parts[1], 10, 0)
-		recv, _ := strconv.ParseInt(parts[2], 10, 0)
+		recv, _ := strconv.ParseInt(parts[1], 10, 0)
+		send, _ := strconv.ParseInt(parts[2], 10, 0)
 
 		mesh, found := meshes[name]
 		if !found {
