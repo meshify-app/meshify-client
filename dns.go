@@ -173,6 +173,7 @@ func handleQueries(w dns.ResponseWriter, r *dns.Msg) {
 						A: ip.To4(),
 					}
 					m.Answer = append(m.Answer, rr)
+					m.Authoritative = true
 					m.Rcode = dns.RcodeSuccess
 				}
 			}
@@ -183,13 +184,14 @@ func handleQueries(w dns.ResponseWriter, r *dns.Msg) {
 				x := (offset + i) % len(addrs)
 				if strings.Contains(addrs[x], ":") {
 					ip, _, _ := net.ParseCIDR(addrs[x])
-					rr = &dns.A{Hdr: dns.RR_Header{Name: r.Question[0].Name,
-						Rrtype: dns.TypeA,
+					rr = &dns.AAAA{Hdr: dns.RR_Header{Name: r.Question[0].Name,
+						Rrtype: dns.TypeAAAA,
 						Class:  dns.ClassINET,
 						Ttl:    300},
-						A: ip.To4(),
+						AAAA: ip.To16(),
 					}
 					m.Answer = append(m.Answer, rr)
+					m.Authoritative = true
 					m.Rcode = dns.RcodeSuccess
 				}
 			}
