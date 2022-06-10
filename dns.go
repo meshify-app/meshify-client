@@ -88,6 +88,16 @@ func StartDNS() error {
 			msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
 			for j := 0; j < len(msg.Config[i].Hosts); j++ {
 				n := strings.ToLower(msg.Config[i].Hosts[j].Name)
+				if strings.Contains(msg.Config[i].Hosts[j].Current.Address[0], ":") {
+					// ipv6
+				} else {
+					// ipv4
+					addresses := strings.Split(msg.Config[i].Hosts[j].Current.Address[0], "/")
+					address := addresses[0]
+					digits := strings.Split(address, ".")
+					label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
+					DnsTable[label] = []string{n}
+				}
 				DnsTable[n] = append(DnsTable[n], msg.Config[i].Hosts[j].Current.Address...)
 				if msg.Config[i].Hosts[j].Current.Endpoint != "" {
 					ip_port := msg.Config[i].Hosts[j].Current.Endpoint
@@ -149,6 +159,16 @@ func UpdateDNS(msg model.Message) error {
 			msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
 			for j := 0; j < len(msg.Config[i].Hosts); j++ {
 				n := strings.ToLower(msg.Config[i].Hosts[j].Name)
+				if strings.Contains(msg.Config[i].Hosts[j].Current.Address[0], ":") {
+					// ipv6
+				} else {
+					// ipv4
+					addresses := strings.Split(msg.Config[i].Hosts[j].Current.Address[0], "/")
+					address := addresses[0]
+					digits := strings.Split(address, ".")
+					label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
+					DnsTable[label] = []string{n}
+				}
 				dnsTable[n] = append(dnsTable[n], msg.Config[i].Hosts[j].Current.Address...)
 				if msg.Config[i].Hosts[j].Current.Endpoint != "" {
 					ip_port := msg.Config[i].Hosts[j].Current.Endpoint
