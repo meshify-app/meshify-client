@@ -74,6 +74,17 @@ func StartDNS() error {
 			host := msg.Config[i].Hosts[index]
 			name := strings.ToLower(host.Name)
 			DnsTable[name] = append(DnsTable[name], host.Current.Address...)
+			if strings.Contains(host.Current.Address[0], ":") {
+				// ipv6
+			} else {
+				// ipv4
+				addresses := strings.Split(host.Current.Address[0], "/")
+				address := addresses[0]
+				digits := strings.Split(address, ".")
+				label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
+				DnsTable[label] = []string{name}
+				log.Infof("label = %s name = %s", label, name)
+			}
 			msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
 			for j := 0; j < len(msg.Config[i].Hosts); j++ {
 				n := strings.ToLower(msg.Config[i].Hosts[j].Name)
@@ -121,6 +132,19 @@ func UpdateDNS(msg model.Message) error {
 		} else {
 			host := msg.Config[i].Hosts[index]
 			name := strings.ToLower(host.Name)
+			DnsTable[name] = append(DnsTable[name], host.Current.Address...)
+			if strings.Contains(host.Current.Address[0], ":") {
+				// ipv6
+			} else {
+				// ipv4
+				addresses := strings.Split(host.Current.Address[0], "/")
+				address := addresses[0]
+				digits := strings.Split(address, ".")
+				label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
+				DnsTable[label] = []string{name}
+				log.Infof("label = %s name = %s", label, name)
+
+			}
 			dnsTable[name] = append(dnsTable[name], host.Current.Address...)
 			msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
 			for j := 0; j < len(msg.Config[i].Hosts); j++ {
@@ -160,6 +184,19 @@ func handleQueries(w dns.ResponseWriter, r *dns.Msg) {
 	if addrs == nil {
 		m.Rcode = dns.RcodeServerFailure
 	} else {
+
+		if r.Question[0].Qtype == dns.TypePTR {
+			rr = &dns.PTR{Hdr: dns.RR_Header{Name: r.Question[0].Name,
+				Rrtype: dns.TypePTR,
+				Class:  dns.ClassINET,
+				Ttl:    300},
+				Ptr: addrs[0] + ".",
+			}
+			m.Answer = append(m.Answer, rr)
+			m.Authoritative = true
+			m.Rcode = dns.RcodeSuccess
+		}
+
 		if r.Question[0].Qtype == dns.TypeA {
 			offset := rand.Intn(len(addrs))
 			for i := 0; i < len(addrs); i++ {
