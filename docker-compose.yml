@@ -1,21 +1,20 @@
 version: '3.3'
 services:
-  meshify-client-build:
-    container_name: meshify-client-build
-    image: meshify-client-build
+  meshify-service-host:
+    container_name: meshify-service-host
+    image: meshify-client
     build:
       context: .
       dockerfile: Dockerfile
     network_mode: bridge
     volumes:
-      - .:/docker
+      - /var/meshify/test:/etc/meshify
     environment:
       - USERID
       - GROUPID
-    secrets:
-      - user_ssh_key
-secrets:
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    ports:
+      - "30000:30000/udp"
 
-  user_ssh_key:
-
-    file: ~/.ssh/id_rsa

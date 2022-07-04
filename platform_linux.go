@@ -76,6 +76,7 @@ func RunService(svcName string) {
 
 	DoWork()
 
+	log.Info("setting up signal handlers")
 	sigs := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -89,6 +90,7 @@ func RunService(svcName string) {
 	<-done
 
 	log.Info("Exiting")
+	os.Exit(0)
 
 }
 
