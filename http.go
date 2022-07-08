@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 func ReadFile(path string) (string, error) {
@@ -26,9 +27,15 @@ func ReadFile(path string) (string, error) {
 	return string(b), nil
 }
 
+// Output json structures for the stats and key generation
+
 type Metrics struct {
 	Send int64
 	Recv int64
+}
+
+type Key struct {
+	Public string
 }
 
 func MakeStats(name string, body string) (string, error) {
@@ -54,17 +61,21 @@ func MakeStats(name string, body string) (string, error) {
 	return string(result), err
 }
 
-func stats_handler(w http.ResponseWriter, req *http.Request) {
-	log.Infof("stats_handler")
+// statHandler will return the stats for the requested mesh
+func statsHandler(w http.ResponseWriter, req *http.Request) {
+	log.Infof("statsHandler")
 	// /stats/
 	parts := strings.Split(req.URL.Path, "/")
 	mesh := parts[2]
 	log.Infof("GetStats(%s)", mesh)
+
+	// GetStats will execute "wg show mesh transfer" and return the output
 	body, err := GetStats(mesh)
 	if err != nil {
 		log.Error(err)
 	}
 
+	// which we then make into a json structure and return it
 	stats, err := MakeStats(mesh, body)
 	if err != nil {
 		log.Error(err)
@@ -74,8 +85,38 @@ func stats_handler(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, stats)
 }
 
+// keyHandler will generate a new keypair and insert it into the keystore.
+// It will then return the public key.  This allows the agent to create a new
+// host without compromising the private key.
+func keyHandler(w http.ResponseWriter, req *http.Request) {
+	log.Infof("keyHandler")
+	// /keys/
+
+	// add the headers here to pass preflight checks
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "*")
+
+	switch req.Method {
+	case "GET":
+		log.Infof("Method: %s", req.Method)
+		key := Key{}
+		wg, _ := wgtypes.GeneratePrivateKey()
+		key.Public = wg.PublicKey().String()
+		KeyAdd(key.Public, wg.String())
+		KeySave()
+		json.NewEncoder(w).Encode(key)
+
+	default:
+		log.Infof("Method: %s", req.Method)
+		io.WriteString(w, "")
+		log.Infof("Unknown method: %s", req.Method)
+	}
+
+}
+
 func startHTTPd() {
-	http.HandleFunc("/stats/", stats_handler)
+	http.HandleFunc("/stats/", statsHandler)
+	http.HandleFunc("/keys/", keyHandler)
 
 	log.Infof("Starting web server on %s", ":53280")
 
