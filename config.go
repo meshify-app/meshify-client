@@ -35,16 +35,29 @@ func loadConfig() error {
 	// Get configuration
 	config.Debug = false
 	config.Quiet = false
-	config.CheckInterval = 5
+	config.CheckInterval = 10
 	config.SourceAddress = "0.0.0.0"
 	config.tls.MinVersion = tls.VersionTLS10
-	config.MeshifyHost = "https://my.meshify.app"
+	config.MeshifyHost = os.Getenv("MESHIFY_HOST")
+
+	config.HostID = os.Getenv("MESHIFY_HOST_ID")
+	config.ApiKey = os.Getenv("MESHIFY_API_KEY")
+
+	if config.loaded {
+		return nil
+	}
+
+	if config.MeshifyHost == "" {
+		config.MeshifyHost = "https://my.meshify.app"
+	}
 
 	if !config.init {
 		config.init = true
 		config.path = flag.String("C", "meshify-client.config.json", "Path to configuration file")
 		MeshifyHost := flag.String("server", "", "Meshify server to connect to")
-		CheckInterval := flag.Int64("interval", 0, "Time interval between maps.  Default is 5 (5 seconds)")
+		HostID := flag.String("hostid", "", "Host ID to use")
+		ApiKey := flag.String("apikey", "", "API key to use")
+		CheckInterval := flag.Int64("interval", 0, "Time interval between maps.  Default is 10 (seconds)")
 		quiet := flag.Bool("quiet", false, "Do not output to stdout (only to syslog)")
 		sourceStr := flag.String("source", "", "Source address for http client requests")
 		flag.Parse()
@@ -52,7 +65,7 @@ func loadConfig() error {
 		// Open the config file specified
 
 		file, err := os.Open(GetDataPath() + *config.path)
-		if err != nil && *MeshifyHost == "" {
+		if err != nil && *MeshifyHost == "" && *HostID == "" && *ApiKey == "" {
 			return err
 		}
 
@@ -71,6 +84,12 @@ func loadConfig() error {
 
 		if *MeshifyHost != "" {
 			config.MeshifyHost = *MeshifyHost
+		}
+		if *HostID != "" {
+			config.HostID = *HostID
+		}
+		if *ApiKey != "" {
+			config.ApiKey = *ApiKey
 		}
 
 		if config.MeshifyHost == "" {
