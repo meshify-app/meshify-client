@@ -65,7 +65,7 @@ func loadConfig() error {
 		// Open the config file specified
 
 		file, err := os.Open(GetDataPath() + *config.path)
-		if err != nil && *MeshifyHost == "" && *HostID == "" && *ApiKey == "" {
+		if err != nil && *MeshifyHost == "" && *HostID == "" && *ApiKey == "" && config.HostID == "" && config.ApiKey == "" {
 			return err
 		}
 

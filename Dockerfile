@@ -1,5 +1,6 @@
 FROM ubuntu:jammy
 
+RUN mkdir -p /etc/meshify
 RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf
 RUN apt-get update && apt-get -y install curl gnupg
 RUN curl -s --compressed https://ppa.meshify.app/KEY.gpg | apt-key add -

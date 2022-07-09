@@ -23,7 +23,7 @@ func main() {
 
 	err = loadConfig()
 	if err != nil && len(os.Args) < 2 {
-		log.Error("Could not load config,  will load when it is ready.")
+		log.Error("Could not load config,  will load when it is ready. err= ", err)
 	}
 
 	KeyInitialize()
