@@ -18,6 +18,7 @@ import (
 	"golang.org/x/sys/windows/svc/debug"
 	"golang.org/x/sys/windows/svc/eventlog"
 	"golang.org/x/sys/windows/svc/mgr"
+	"golang.zx2c4.com/wireguard-windows/conf"
 )
 
 var elog debug.Log
@@ -182,7 +183,18 @@ func installService(name, desc string) error {
 		s.Close()
 		return fmt.Errorf("service %s already exists", name)
 	}
-	s, err = m.CreateService(name, exepath, mgr.Config{DisplayName: desc, StartType: mgr.StartAutomatic})
+
+	config := mgr.Config{
+		ServiceType:    windows.SERVICE_WIN32_OWN_PROCESS,
+		StartType:      mgr.StartAutomatic,
+		ErrorControl:   mgr.ErrorNormal,
+		Dependencies:   []string{"Nsi"},
+		DisplayName:    desc,
+		SidType:        windows.SERVICE_SID_TYPE_UNRESTRICTED,
+		Description:    desc,
+		ExecutablePath: exepath,
+	}
+	s, err = m.CreateService(name, exepath, config)
 	if err != nil {
 		return err
 	}
@@ -195,12 +207,88 @@ func installService(name, desc string) error {
 	return nil
 }
 
+func makeMesh(configPath string) error {
+
+	name := conf.NameFromPath(configPath)
+	exepath, err := exePath()
+	if err != nil {
+		return err
+	}
+
+	exepath = strings.Replace(exepath, "meshify-client.exe", "wireguard.exe", -1)
+
+	m, err := mgr.Connect()
+	if err != nil {
+		return err
+	}
+	defer m.Disconnect()
+
+	serviceName := string.fmt("WireGuardTunnel$%s", name)
+
+	s, err := m.OpenService(serviceName)
+	if err == nil {
+		s.Close()
+		return fmt.Errorf("service %s already exists", name)
+	}
+
+	desc := fmt.Sprintf("Mesh: %s", name)
+
+	config := mgr.Config{
+		ServiceName:    serviceName,
+		ServiceType:    windows.SERVICE_WIN32_OWN_PROCESS,
+		StartType:      mgr.StartAutomatic,
+		ErrorControl:   mgr.ErrorNormal,
+		Dependencies:   []string{"Nsi"},
+		DisplayName:    desc,
+		SidType:        windows.SERVICE_SID_TYPE_UNRESTRICTED,
+		Description:    desc,
+		ExecutablePath: exepath,
+	}
+	s, err = m.CreateService(serviceName, config)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+	err = eventlog.InstallAsEventCreate(name, eventlog.Error|eventlog.Warning|eventlog.Info)
+	if err != nil {
+		s.Delete()
+		return fmt.Errorf("SetupEventLogSource() failed: %s", err)
+	}
+	return nil
+}
+
+func removeMesh(name string) error {
+
+	serviceName := string.fmt("WireGuardTunnel$%s", name)
+
+	m, err := mgr.Connect()
+	if err != nil {
+		return err
+	}
+	defer m.Disconnect()
+	s, err := m.OpenService(serviceName)
+	if err != nil {
+		return fmt.Errorf("Mesh  %s is not installed", name)
+	}
+	defer s.Close()
+	err = s.Delete()
+	if err != nil {
+		return err
+	}
+	err = eventlog.Remove(name)
+	if err != nil {
+		return fmt.Errorf("RemoveEventLogSource() failed: %s", err)
+	}
+	return nil
+}
+
 func removeService(name string) error {
 	m, err := mgr.Connect()
 	if err != nil {
 		return err
 	}
 	defer m.Disconnect()
+
 	s, err := m.OpenService(name)
 	if err != nil {
 		return fmt.Errorf("service %s is not installed", name)
@@ -216,12 +304,13 @@ func removeService(name string) error {
 	}
 	return nil
 }
+
 func usage(errmsg string) {
 	fmt.Fprintf(os.Stderr,
 		"%s\n\n"+
 			"usage: %s <command>\n"+
 			"       where <command> is one of\n"+
-			"       install, remove, debug, start, stop, pause or continue.\n",
+			"       install, remove, makemesh, removemesh, debug, start, stop, pause or continue.\n",
 		errmsg, os.Args[0])
 	os.Exit(2)
 }

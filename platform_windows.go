@@ -113,6 +113,10 @@ func ServiceManager(svcName string, cmd string) {
 		err = installService(svcName, "Meshify Agent")
 	case "remove":
 		err = removeService(svcName)
+	case "makemesh":
+		err = makeMesh(os.Args[2])
+	case "removemesh":
+		err = removeMesh(os.Args[2])
 	case "start":
 		err = startService(svcName)
 	case "stop":
