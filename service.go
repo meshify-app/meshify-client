@@ -14,11 +14,11 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/debug"
 	"golang.org/x/sys/windows/svc/eventlog"
 	"golang.org/x/sys/windows/svc/mgr"
-	"golang.zx2c4.com/wireguard-windows/conf"
 )
 
 var elog debug.Log
@@ -185,14 +185,13 @@ func installService(name, desc string) error {
 	}
 
 	config := mgr.Config{
-		ServiceType:    windows.SERVICE_WIN32_OWN_PROCESS,
-		StartType:      mgr.StartAutomatic,
-		ErrorControl:   mgr.ErrorNormal,
-		Dependencies:   []string{"Nsi"},
-		DisplayName:    desc,
-		SidType:        windows.SERVICE_SID_TYPE_UNRESTRICTED,
-		Description:    desc,
-		ExecutablePath: exepath,
+		ServiceType:  windows.SERVICE_WIN32_OWN_PROCESS,
+		StartType:    mgr.StartAutomatic,
+		ErrorControl: mgr.ErrorNormal,
+		Dependencies: []string{"Nsi"},
+		DisplayName:  desc,
+		SidType:      windows.SERVICE_SID_TYPE_UNRESTRICTED,
+		Description:  desc,
 	}
 	s, err = m.CreateService(name, exepath, config)
 	if err != nil {
@@ -209,7 +208,11 @@ func installService(name, desc string) error {
 
 func makeMesh(configPath string) error {
 
-	name := conf.NameFromPath(configPath)
+	name, err := NameFromPath(configPath)
+	if err != nil {
+		return err
+	}
+
 	exepath, err := exePath()
 	if err != nil {
 		return err
@@ -223,7 +226,7 @@ func makeMesh(configPath string) error {
 	}
 	defer m.Disconnect()
 
-	serviceName := string.fmt("WireGuardTunnel$%s", name)
+	serviceName := fmt.Sprintf("WireGuardTunnel$%s", name)
 
 	s, err := m.OpenService(serviceName)
 	if err == nil {
@@ -234,17 +237,15 @@ func makeMesh(configPath string) error {
 	desc := fmt.Sprintf("Mesh: %s", name)
 
 	config := mgr.Config{
-		ServiceName:    serviceName,
-		ServiceType:    windows.SERVICE_WIN32_OWN_PROCESS,
-		StartType:      mgr.StartAutomatic,
-		ErrorControl:   mgr.ErrorNormal,
-		Dependencies:   []string{"Nsi"},
-		DisplayName:    desc,
-		SidType:        windows.SERVICE_SID_TYPE_UNRESTRICTED,
-		Description:    desc,
-		ExecutablePath: exepath,
+		ServiceType:  windows.SERVICE_WIN32_OWN_PROCESS,
+		StartType:    mgr.StartAutomatic,
+		ErrorControl: mgr.ErrorNormal,
+		Dependencies: []string{"Nsi"},
+		DisplayName:  desc,
+		SidType:      windows.SERVICE_SID_TYPE_UNRESTRICTED,
+		Description:  desc,
 	}
-	s, err = m.CreateService(serviceName, config)
+	s, err = m.CreateService(serviceName, exepath, config)
 	if err != nil {
 		return err
 	}
@@ -259,7 +260,7 @@ func makeMesh(configPath string) error {
 
 func removeMesh(name string) error {
 
-	serviceName := string.fmt("WireGuardTunnel$%s", name)
+	serviceName := fmt.Sprintf("WireGuardTunnel$%s", name)
 
 	m, err := mgr.Connect()
 	if err != nil {
@@ -268,7 +269,7 @@ func removeMesh(name string) error {
 	defer m.Disconnect()
 	s, err := m.OpenService(serviceName)
 	if err != nil {
-		return fmt.Errorf("Mesh  %s is not installed", name)
+		return fmt.Errorf("mesh  %s is not installed", name)
 	}
 	defer s.Close()
 	err = s.Delete()
@@ -277,7 +278,7 @@ func removeMesh(name string) error {
 	}
 	err = eventlog.Remove(name)
 	if err != nil {
-		return fmt.Errorf("RemoveEventLogSource() failed: %s", err)
+		return fmt.Errorf("removeEventLogSource() failed: %s", err)
 	}
 	return nil
 }
