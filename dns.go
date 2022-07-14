@@ -73,6 +73,7 @@ func StartDNS() error {
 		} else {
 			host := msg.Config[i].Hosts[index]
 			name := strings.ToLower(host.Name)
+			log.Infof("label = %s addr = %v", name, host.Current.Address)
 			DnsTable[name] = append(DnsTable[name], host.Current.Address...)
 			if strings.Contains(host.Current.Address[0], ":") {
 				// ipv6
@@ -98,6 +99,7 @@ func StartDNS() error {
 					label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
 					DnsTable[label] = []string{n}
 				}
+				log.Infof("label = %s name = %v", n, msg.Config[i].Hosts[j].Current.Address)
 				DnsTable[n] = append(DnsTable[n], msg.Config[i].Hosts[j].Current.Address...)
 				if msg.Config[i].Hosts[j].Current.Endpoint != "" {
 					ip_port := msg.Config[i].Hosts[j].Current.Endpoint
@@ -143,7 +145,6 @@ func UpdateDNS(msg model.Message) error {
 			host := msg.Config[i].Hosts[index]
 			name := strings.ToLower(host.Name)
 			dnsTable[name] = append(dnsTable[name], host.Current.Address...)
-			log.Infof("label = %s addr = %s", name, host.Current.Address)
 			if strings.Contains(host.Current.Address[0], ":") {
 				// ipv6
 			} else {
