@@ -199,7 +199,10 @@ func handleQueries(w dns.ResponseWriter, r *dns.Msg) {
 	q := strings.ToLower(r.Question[0].Name)
 	q = strings.Trim(q, ".")
 
-	log.Infof("DNS Query: %s", q)
+	if !config.Quiet {
+		log.Infof("DNS Query: %s", q)
+	}
+
 	addrs := DnsTable[q]
 	if addrs == nil {
 		m.Rcode = dns.RcodeServerFailure
