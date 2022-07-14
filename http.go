@@ -63,7 +63,9 @@ func MakeStats(name string, body string) (string, error) {
 
 // statHandler will return the stats for the requested mesh
 func statsHandler(w http.ResponseWriter, req *http.Request) {
-	log.Infof("statsHandler")
+	if !config.Quiet {
+		log.Infof("statsHandler")
+	}
 	// /stats/
 	parts := strings.Split(req.URL.Path, "/")
 	mesh := parts[2]
