@@ -34,7 +34,7 @@ func (err *configError) Error() string {
 func loadConfig() error {
 	// Get configuration
 	config.Debug = false
-	config.Quiet = false
+	config.Quiet = true
 	config.CheckInterval = 10
 	config.SourceAddress = "0.0.0.0"
 	config.tls.MinVersion = tls.VersionTLS10

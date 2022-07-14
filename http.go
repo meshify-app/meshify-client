@@ -67,7 +67,9 @@ func statsHandler(w http.ResponseWriter, req *http.Request) {
 	// /stats/
 	parts := strings.Split(req.URL.Path, "/")
 	mesh := parts[2]
-	log.Infof("GetStats(%s)", mesh)
+	if !config.Quiet {
+		log.Infof("GetStats(%s)", mesh)
+	}
 
 	// GetStats will execute "wg show mesh transfer" and return the output
 	body, err := GetStats(mesh)
@@ -80,7 +82,9 @@ func statsHandler(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Error(err)
 	}
-	log.Infof("Stats: %s", stats)
+	if !config.Quiet {
+		log.Infof("Stats: %s", stats)
+	}
 	w.Header().Add("Access-Control-Allow-Origin", "*")
 	io.WriteString(w, stats)
 }
