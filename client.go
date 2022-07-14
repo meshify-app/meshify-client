@@ -56,8 +56,12 @@ func StartHTTPClient(c chan []byte) {
 				log.Errorf("Failed to load config.")
 			}
 		}
+
 		var reqURL string = fmt.Sprintf(meshifyHostAPIFmt, host, config.HostID)
-		log.Infof("  GET %s", reqURL)
+		if !config.Quiet {
+			log.Infof("  GET %s", reqURL)
+		}
+
 		req, err := http.NewRequest("GET", reqURL, bytes.NewBuffer(content))
 		if err != nil {
 			return
@@ -313,9 +317,8 @@ func UpdateMeshifyConfig(body []byte) {
 					if err != nil {
 						log.Errorf("Error reading meshify config file: %v", err)
 						force = true
-					}	
+					}
 				}
-
 
 				if !force && bytes.Equal(bits, text) {
 					log.Infof("*** SKIPPING %s *** No changes!", msg.Config[i].MeshName)

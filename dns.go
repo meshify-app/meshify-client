@@ -73,6 +73,7 @@ func StartDNS() error {
 		} else {
 			host := msg.Config[i].Hosts[index]
 			name := strings.ToLower(host.Name)
+			log.Infof("label = %s addr = %v", name, host.Current.Address)
 			DnsTable[name] = append(DnsTable[name], host.Current.Address...)
 			if strings.Contains(host.Current.Address[0], ":") {
 				// ipv6
@@ -98,6 +99,7 @@ func StartDNS() error {
 					label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
 					DnsTable[label] = []string{n}
 				}
+				log.Infof("label = %s name = %v", n, msg.Config[i].Hosts[j].Current.Address)
 				DnsTable[n] = append(DnsTable[n], msg.Config[i].Hosts[j].Current.Address...)
 				if msg.Config[i].Hosts[j].Current.Endpoint != "" {
 					ip_port := msg.Config[i].Hosts[j].Current.Endpoint
@@ -142,7 +144,7 @@ func UpdateDNS(msg model.Message) error {
 		} else {
 			host := msg.Config[i].Hosts[index]
 			name := strings.ToLower(host.Name)
-			DnsTable[name] = append(DnsTable[name], host.Current.Address...)
+			dnsTable[name] = append(dnsTable[name], host.Current.Address...)
 			if strings.Contains(host.Current.Address[0], ":") {
 				// ipv6
 			} else {
@@ -151,7 +153,7 @@ func UpdateDNS(msg model.Message) error {
 				address := addresses[0]
 				digits := strings.Split(address, ".")
 				label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
-				DnsTable[label] = []string{name}
+				dnsTable[label] = []string{name}
 				log.Infof("label = %s name = %s", label, name)
 
 			}
@@ -167,7 +169,7 @@ func UpdateDNS(msg model.Message) error {
 					address := addresses[0]
 					digits := strings.Split(address, ".")
 					label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
-					DnsTable[label] = []string{n}
+					dnsTable[label] = []string{n}
 				}
 				dnsTable[n] = append(dnsTable[n], msg.Config[i].Hosts[j].Current.Address...)
 				if msg.Config[i].Hosts[j].Current.Endpoint != "" {
@@ -199,7 +201,10 @@ func handleQueries(w dns.ResponseWriter, r *dns.Msg) {
 	q := strings.ToLower(r.Question[0].Name)
 	q = strings.Trim(q, ".")
 
-	log.Infof("DNS Query: %s", q)
+	if !config.Quiet {
+		log.Infof("DNS Query: %s", q)
+	}
+
 	addrs := DnsTable[q]
 	if addrs == nil {
 		m.Rcode = dns.RcodeServerFailure
