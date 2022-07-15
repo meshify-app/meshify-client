@@ -32,27 +32,31 @@ func (err *configError) Error() string {
 }
 
 func loadConfig() error {
-	// Get configuration
-	config.Debug = false
-	config.Quiet = true
-	config.CheckInterval = 10
-	config.SourceAddress = "0.0.0.0"
-	config.tls.MinVersion = tls.VersionTLS10
-	config.MeshifyHost = os.Getenv("MESHIFY_HOST")
-
-	config.HostID = os.Getenv("MESHIFY_HOST_ID")
-	config.ApiKey = os.Getenv("MESHIFY_API_KEY")
 
 	if config.loaded {
 		return nil
 	}
 
-	if config.MeshifyHost == "" {
-		config.MeshifyHost = "https://my.meshify.app"
-	}
-
 	if !config.init {
 		config.init = true
+
+		// configure defaults
+		config.Debug = false
+		config.Quiet = true
+		config.CheckInterval = 10
+		config.SourceAddress = "0.0.0.0"
+		config.tls.MinVersion = tls.VersionTLS10
+
+		// load defaults from environment
+		config.MeshifyHost = os.Getenv("MESHIFY_HOST")
+		config.HostID = os.Getenv("MESHIFY_HOST_ID")
+		config.ApiKey = os.Getenv("MESHIFY_API_KEY")
+
+		if config.MeshifyHost == "" {
+			config.MeshifyHost = "https://my.meshify.app"
+		}
+
+		// pick up command line arguments
 		config.path = flag.String("C", "meshify-client.config.json", "Path to configuration file")
 		MeshifyHost := flag.String("server", "", "Meshify server to connect to")
 		HostID := flag.String("hostid", "", "Host ID to use")
