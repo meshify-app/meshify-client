@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/meshify-app/go-upnp v0.0.0-20210510042331-99d46fe47575
-	github.com/meshify-app/meshify v0.0.0-20220724083335-8d93822a4b8d
+	github.com/meshify-app/meshify v0.0.0-20220724140034-68b06c95ea1b
 	github.com/miekg/dns v1.1.50
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f

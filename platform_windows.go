@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/meshify-app/meshify/model"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows/svc"
 )
