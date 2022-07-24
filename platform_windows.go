@@ -88,6 +88,18 @@ func StopWireguard(meshName string) error {
 
 }
 
+func StartContainer(service model.Service) (string, error) {
+	return "", nil
+}
+
+func CheckContainer(service model.Service) bool {
+	return true
+}
+
+func StopContainer(service model.Service) error {
+	return nil
+}
+
 // Windows Main functions
 
 func InService() (bool, error) {

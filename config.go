@@ -6,6 +6,8 @@ import (
 	"flag"
 	"net"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var config struct {
@@ -13,6 +15,8 @@ var config struct {
 	MeshifyHost   string
 	HostID        string
 	ApiKey        string
+	ServiceGroup  string
+	ServiceApiKey string
 	CheckInterval int64
 	tls           tls.Config
 	SourceAddress string
@@ -42,7 +46,7 @@ func loadConfig() error {
 
 		// configure defaults
 		config.Debug = false
-		config.Quiet = true
+		config.Quiet = false
 		config.CheckInterval = 10
 		config.SourceAddress = "0.0.0.0"
 		config.tls.MinVersion = tls.VersionTLS10
@@ -51,6 +55,8 @@ func loadConfig() error {
 		config.MeshifyHost = os.Getenv("MESHIFY_HOST")
 		config.HostID = os.Getenv("MESHIFY_HOST_ID")
 		config.ApiKey = os.Getenv("MESHIFY_API_KEY")
+		config.ServiceGroup = os.Getenv("MESHIFY_SERVICE_GROUP")
+		config.ServiceApiKey = os.Getenv("MESHIFY_SERVICE_API_KEY")
 
 		if config.MeshifyHost == "" {
 			config.MeshifyHost = "https://my.meshify.app"
@@ -60,6 +66,9 @@ func loadConfig() error {
 		config.path = flag.String("C", "meshify-client.config.json", "Path to configuration file")
 		MeshifyHost := flag.String("server", "", "Meshify server to connect to")
 		HostID := flag.String("hostid", "", "Host ID to use")
+		ServiceGroup := flag.String("servicegroup", "", "Service group to use")
+		ServiceApiKey := flag.String("serviceapikey", "", "Service API key to use")
+
 		ApiKey := flag.String("apikey", "", "API key to use")
 		CheckInterval := flag.Int64("interval", 0, "Time interval between maps.  Default is 10 (seconds)")
 		quiet := flag.Bool("quiet", false, "Do not output to stdout (only to syslog)")
@@ -96,6 +105,13 @@ func loadConfig() error {
 			config.ApiKey = *ApiKey
 		}
 
+		if *ServiceGroup != "" {
+			config.ServiceGroup = *ServiceGroup
+		}
+		if *ServiceApiKey != "" {
+			config.ServiceApiKey = *ServiceApiKey
+		}
+
 		if config.MeshifyHost == "" {
 			return &configError{"A meshify-client.config.json file with a MeshifyHost parameter is required"}
 		}
@@ -113,6 +129,11 @@ func loadConfig() error {
 			return err
 		}
 		config.loaded = true
+		log.Infof("MeshifyHost: %s", config.MeshifyHost)
+		log.Infof("HostID: %s", config.HostID)
+		log.Infof("ApiKey: %s", config.ApiKey)
+		log.Infof("Quiet: %t", config.Quiet)
+
 	} else {
 		file, err := os.Open(GetDataPath() + *config.path)
 		if err != nil {
@@ -123,6 +144,12 @@ func loadConfig() error {
 		if err != nil {
 			return err
 		}
+
+		log.Infof("MeshifyHost: %s", config.MeshifyHost)
+		log.Infof("HostID: %s", config.HostID)
+		log.Infof("ApiKey: %s", config.ApiKey)
+		log.Infof("Quiet: %t", config.Quiet)
+
 		config.loaded = true
 	}
 	return nil

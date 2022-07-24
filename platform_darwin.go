@@ -69,12 +69,25 @@ func StopWireguard(meshName string) error {
 
 }
 
+func StartContainer(service model.Service) (string, error) {
+	return "", nil
+}
+
+func CheckContainer(service model.Service) bool {
+	return true
+}
+
+func StopContainer(service model.Service) error {
+	return nil
+}
+
 func InService() (bool, error) {
 	return true, nil
 }
 
 func RunService(svcName string) {
 	DoWork()
+	DoServiceWork()
 
 	sigs := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
