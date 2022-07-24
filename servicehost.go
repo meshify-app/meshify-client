@@ -135,6 +135,7 @@ func StartContainers() error {
 				log.Errorf("Error starting service %v", err)
 			} else {
 				service.ContainerId = id
+				service.Status = "Running"
 				UpdateMeshifyServiceHost(service)
 				log.Infof("Started service %s", service.ContainerId)
 			}
@@ -145,6 +146,7 @@ func StartContainers() error {
 				id, err := StartService(service)
 				if err == nil {
 					service.ContainerId = id
+					service.Status = "Running"
 					UpdateMeshifyServiceHost(service)
 					log.Infof("Restarted service %s", service.ContainerId)
 				}
@@ -286,6 +288,7 @@ func UpdateServiceHostConfig(body []byte) {
 					log.Errorf("Error starting service %v", err)
 				} else {
 					service.ContainerId = id
+					service.Status = "Running"
 					UpdateMeshifyServiceHost(service)
 				}
 			} else {
@@ -295,6 +298,7 @@ func UpdateServiceHostConfig(body []byte) {
 					id, err := StartService(service)
 					if err == nil {
 						service.ContainerId = id
+						service.Status = "Running"
 						UpdateMeshifyServiceHost(service)
 					}
 				}
