@@ -20,12 +20,30 @@ import (
 var meshifyHostAPIFmt = "%s/api/v1.0/host/%s/status"
 var meshifyHostUpdateAPIFmt = "%s/api/v1.0/host/%s"
 
-// StartHTTPClient starts the client polling
-func StartHTTPClient(c chan []byte) {
+// Start the channel that iterates the meshify update function
+func StartChannel(c chan []byte) {
+
+	log.Infof("StartChannel Meshify Host %s", config.MeshifyHost)
+	etag := ""
+	var err error
+
+	for {
+		content := <-c
+		if content == nil {
+			break
+		}
+
+		err = GetMeshifyConfig(&etag)
+		if err != nil {
+			log.Errorf("Error getting meshify config: %v", err)
+		}
+	}
+}
+
+func GetMeshifyConfig(etag *string) error {
+
 	host := config.MeshifyHost
-	log.Infof(" %s", host)
 	var client *http.Client
-	var etag string
 
 	if strings.HasPrefix(host, "http:") {
 		client = &http.Client{
@@ -48,58 +66,93 @@ func StartHTTPClient(c chan []byte) {
 
 	}
 
-	for {
-		content := <-c
-		if !config.loaded {
-			err := loadConfig()
-			if err != nil {
-				log.Errorf("Failed to load config.")
-			}
-		}
-
-		var reqURL string = fmt.Sprintf(meshifyHostAPIFmt, host, config.HostID)
-		if !config.Quiet {
-			log.Infof("  GET %s", reqURL)
-		}
-
-		req, err := http.NewRequest("GET", reqURL, bytes.NewBuffer(content))
+	if !config.loaded {
+		err := loadConfig()
 		if err != nil {
-			return
+			log.Errorf("Failed to load config.")
 		}
-		if req != nil {
-			req.Header.Set("X-API-KEY", config.ApiKey)
-			req.Header.Set("User-Agent", "meshify-client/1.0")
-			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("If-None-Match", etag)
-		}
-		resp, err := client.Do(req)
-		if err == nil {
-
-			if resp.StatusCode == 304 {
-			} else if resp.StatusCode != 200 {
-				log.Errorf("Response Error Code: %v, sleeping 10 seconds", resp.StatusCode)
-				time.Sleep(10 * time.Second)
-			} else {
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					log.Errorf("error reading body %v", err)
-				}
-				log.Debugf("%s", string(body))
-				etag = resp.Header.Get("ETag")
-				UpdateMeshifyConfig(body)
-			}
-		} else {
-			log.Errorf("ERROR: %v, sleeping 10 seconds", err)
-			time.Sleep(10 * time.Second)
-		}
-		if resp != nil {
-			resp.Body.Close()
-		}
-		if req != nil {
-			req.Body.Close()
-		}
-
 	}
+
+	var reqURL string = fmt.Sprintf(meshifyHostAPIFmt, host, config.HostID)
+	if !config.Quiet {
+		log.Infof("  GET %s", reqURL)
+	}
+
+	req, err := http.NewRequest("GET", reqURL, nil)
+	if err != nil {
+		return err
+	}
+	if req != nil {
+		req.Header.Set("X-API-KEY", config.ApiKey)
+		req.Header.Set("User-Agent", "meshify-client/1.0")
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("If-None-Match", *etag)
+	}
+	resp, err := client.Do(req)
+	if err == nil {
+		if resp.StatusCode == 304 {
+		} else if resp.StatusCode == 401 {
+			log.Errorf("Unauthorized - looking for another API key")
+			// Read the config and find another API key
+			buffer, err := ioutil.ReadFile(GetDataPath() + "meshify.conf")
+			if err == nil {
+				var conf model.Message
+				err = json.Unmarshal(buffer, &conf)
+				if err == nil {
+					found := false
+					for _, mesh := range conf.Config {
+						for _, host := range mesh.Hosts {
+
+							if host.HostGroup == config.HostID && host.APIKey != config.ApiKey {
+								config.ApiKey = host.APIKey
+								found = true
+								saveConfig()
+								break
+							}
+						}
+					}
+					if !found {
+						if len(conf.Config) == 1 {
+							// Only one mesh and getting a 401, so lets delete that mesh too
+							err = os.Remove(GetDataPath() + "meshify.conf")
+							if err != nil {
+								log.Errorf("Failed to delete meshify.conf")
+							}
+						}
+					}
+				}
+			}
+			// pick up any changes from the agent or manually editing the config file.
+			reloadConfig()
+
+		} else if resp.StatusCode != 200 {
+			log.Errorf("Response Error Code: %v", resp.StatusCode)
+			// time.Sleep(10 * time.Second)
+		} else {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Errorf("error reading body %v", err)
+			}
+			log.Debugf("%s", string(body))
+
+			etag2 := resp.Header.Get("ETag")
+
+			if *etag != etag2 {
+				log.Infof("etag = %s  etag2 = %s", *etag, etag2)
+				*etag = etag2
+			} else {
+				log.Infof("etag %s is equal", etag2)
+			}
+			UpdateMeshifyConfig(body)
+		}
+	} else {
+		log.Errorf("ERROR: %v, continuing", err)
+	}
+	if resp != nil {
+		resp.Body.Close()
+	}
+
+	return err
 }
 
 func UpdateMeshifyHost(host model.Host) error {
@@ -183,7 +236,7 @@ func UpdateMeshifyConfig(body []byte) {
 	file, err := os.Open(GetDataPath() + "meshify.conf")
 
 	if err != nil {
-		log.Errorf("Error opening config file %v", err)
+		log.Errorf("Error opening meshify.conf file %v", err)
 		return
 	}
 	conf, err := ioutil.ReadAll(file)
@@ -197,6 +250,16 @@ func UpdateMeshifyConfig(body []byte) {
 	if bytes.Equal(conf, body) {
 		return
 	} else {
+		log.Info("Config has changed, updating meshify.conf")
+
+		// if we can't read the message, immediately return
+		var msg model.Message
+		err = json.Unmarshal(body, &msg)
+		if err != nil {
+			log.Errorf("Error reading message from server")
+			return
+		}
+
 		file, err := os.OpenFile(GetDataPath()+"meshify.conf", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 		if err != nil {
 			log.Errorf("Error opening meshify.conf for write: %v", err)
@@ -208,10 +271,11 @@ func UpdateMeshifyConfig(body []byte) {
 			log.Infof("Error writing meshify.conf file: %v", err)
 			return
 		}
-		var msg model.Message
-		err = json.Unmarshal(body, &msg)
+
+		var oldconf model.Message
+		err = json.Unmarshal(conf, &oldconf)
 		if err != nil {
-			log.Errorf("Error reading message from server")
+			log.Errorf("Error reading message from disk")
 		}
 
 		log.Debugf("%v", msg)
@@ -230,6 +294,30 @@ func UpdateMeshifyConfig(body []byte) {
 			log.Errorf("GetLocalSubnets, err = ", err)
 		}
 
+		// first, delete any meshes that are no longer in the conf
+		for i := 0; i < len(oldconf.Config); i++ {
+			found := false
+			for j := 0; j < len(msg.Config); j++ {
+				if oldconf.Config[i].MeshName == msg.Config[j].MeshName {
+					found = true
+					break
+				}
+			}
+			if !found {
+				log.Infof("Deleting mesh %v", oldconf.Config[i].MeshName)
+				StopWireguard(oldconf.Config[i].MeshName)
+				os.Remove(GetDataPath() + oldconf.Config[i].MeshName + ".conf")
+
+				for _, host := range oldconf.Config[i].Hosts {
+					if host.HostGroup == config.HostID {
+						KeyDelete(host.Current.PublicKey)
+						KeySave()
+					}
+				}
+			}
+		}
+
+		// handle any other changes
 		for i := 0; i < len(msg.Config); i++ {
 			index := -1
 			for j := 0; j < len(msg.Config[i].Hosts); j++ {
@@ -309,7 +397,7 @@ func UpdateMeshifyConfig(body []byte) {
 
 				file, err := os.Open(path + msg.Config[i].MeshName + ".conf")
 				if err != nil {
-					log.Errorf("Error opening meshify.conf for read: %v", err)
+					log.Errorf("Error opening %s for read: %v", msg.Config[i].MeshName, err)
 					force = true
 				} else {
 					bits, err = ioutil.ReadAll(file)
@@ -323,7 +411,10 @@ func UpdateMeshifyConfig(body []byte) {
 				if !force && bytes.Equal(bits, text) {
 					log.Infof("*** SKIPPING %s *** No changes!", msg.Config[i].MeshName)
 				} else {
-					StopWireguard(msg.Config[i].MeshName)
+					err = StopWireguard(msg.Config[i].MeshName)
+					if err != nil {
+						log.Errorf("Error stopping wireguard: %v", err)
+					}
 
 					err = util.WriteFile(path+msg.Config[i].MeshName+".conf", text)
 					if err != nil {
@@ -333,17 +424,22 @@ func UpdateMeshifyConfig(body []byte) {
 					if !host.Enable {
 						// Host was disabled when we stopped wireguard above
 						log.Infof("Mesh %s is disabled.  Stopped service if running.", msg.Config[i].MeshName)
+						// Stopping the service doesn't seem very reliable, stop it again
+						if err = StopWireguard(msg.Config[i].MeshName); err != nil {
+							log.Errorf("Error stopping wireguard: %v", err)
+						}
+
 					} else {
 						err = StartWireguard(msg.Config[i].MeshName)
 						if err == nil {
-							log.Infof("meshify.conf reloaded.  New config:\n%s", body)
+							log.Infof("Started %s", msg.Config[i].MeshName)
+							log.Infof("%s Config: %v", msg.Config[i].MeshName, msg.Config[i])
 						}
 					}
 				}
 
 			}
 		}
-
 	}
 
 }
@@ -376,6 +472,9 @@ func GetLocalSubnets() ([]*net.IPNet, error) {
 func StartBackgroundRefreshService() {
 
 	for {
+
+		// Do this startup process every hour.  Keeps UPnP ports active, handles laptop sleeps, etc.
+		time.Sleep(60 * time.Minute)
 
 		file, err := os.Open(GetDataPath() + "meshify.conf")
 		if err != nil {
@@ -483,15 +582,14 @@ func StartBackgroundRefreshService() {
 				} else {
 					err = StartWireguard(msg.Config[i].MeshName)
 					if err == nil {
-						log.Infof("meshify.conf reloaded.  New config:\n%s", bytes)
+						log.Infof("Started %s", msg.Config[i].MeshName)
+						log.Infof("%s Config: %v", msg.Config[i].MeshName, msg.Config[i])
 					}
 				}
 
 			}
 			StartDNS()
 		}
-		// Do this startup process every hour.  Keeps UPnP ports active, handles laptop sleeps, etc.
-		time.Sleep(60 * time.Minute)
 	}
 }
 
@@ -516,7 +614,7 @@ func DoWork() {
 
 		c := make(chan []byte)
 		go startHTTPd()
-		go StartHTTPClient(c)
+		go StartChannel(c)
 		go StartDNS()
 		go StartBackgroundRefreshService()
 
@@ -531,12 +629,7 @@ func DoWork() {
 
 			if ts.Unix() >= curTs {
 
-				err := getStatistics()
-				if err != nil {
-					log.Errorf("getStatistics: %v", err)
-				}
-
-				b := []byte("Alan")
+				b := []byte("")
 
 				c <- b
 
