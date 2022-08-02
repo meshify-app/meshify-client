@@ -120,9 +120,40 @@ func keyHandler(w http.ResponseWriter, req *http.Request) {
 
 }
 
+func stopServiceHandler(w http.ResponseWriter, req *http.Request) {
+	// add the headers here to pass preflight checks
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "*")
+
+	// extract the mesh name from the url
+	parts := strings.Split(req.URL.Path, "/")
+	if len(parts) < 3 {
+		log.Errorf("Invalid url: %s", req.URL.Path)
+		io.WriteString(w, "")
+		return
+	}
+	mesh := parts[2]
+	log.Infof("StopWireguard(%s)", mesh)
+
+	switch req.Method {
+	case "DELETE":
+		log.Infof("Method: %s", req.Method)
+		err := StopWireguard(mesh)
+		if err != nil {
+			log.Error(err)
+		}
+		io.WriteString(w, "")
+
+	default:
+		io.WriteString(w, "")
+		log.Infof("Unknown method: %s", req.Method)
+	}
+}
+
 func startHTTPd() {
 	http.HandleFunc("/stats/", statsHandler)
 	http.HandleFunc("/keys/", keyHandler)
+	http.HandleFunc("/service/", stopServiceHandler)
 
 	log.Infof("Starting web server on %s", ":53280")
 
