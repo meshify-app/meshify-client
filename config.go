@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"flag"
+	"io/ioutil"
 	"net"
 	"os"
 
@@ -33,6 +34,37 @@ type configError struct {
 
 func (err *configError) Error() string {
 	return err.message
+}
+
+func saveConfig() error {
+	log.Info("Saving config")
+	if config.path == nil {
+		return nil
+	}
+	data, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(GetDataPath()+*config.path, data, 0600)
+}
+
+func reloadConfig() error {
+	log.Info("Reloading config")
+	if config.path == nil {
+		return nil
+	}
+	data, err := ioutil.ReadFile(GetDataPath() + *config.path)
+	if err != nil {
+		return err
+	}
+	json.Unmarshal(data, &config)
+
+	log.Infof("MeshifyHost: %s", config.MeshifyHost)
+	log.Infof("HostID: %s", config.HostID)
+	log.Infof("ApiKey: %s", config.ApiKey)
+	log.Infof("Quiet: %t", config.Quiet)
+
+	return nil
 }
 
 func loadConfig() error {
