@@ -67,6 +67,12 @@ func StopWireguard(meshName string) error {
 		log.Errorf("Error stopping WireGuard: %v (%s)", err, out.String())
 	}
 
+	// remove the file if it exists
+	path := GetWireguardPath() + meshName + ".conf"
+	if _, err := os.Stat(path); err == nil {
+		os.Remove(path)
+	}
+
 	return err
 
 }
