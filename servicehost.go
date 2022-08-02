@@ -223,7 +223,7 @@ func UpdateMeshifyServiceHost(service model.Service) error {
 	return nil
 }
 
-// UpdateMeshifyConfig updates the config from the server
+// UpdateServiceHostConfig updates the config from the server
 func UpdateServiceHostConfig(body []byte) {
 
 	// If the file doesn't exist create it for the first time
