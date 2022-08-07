@@ -286,6 +286,8 @@ func UpdateServiceHostConfig(body []byte) {
 				id, err := StartService(service)
 				if err != nil {
 					log.Errorf("Error starting service %v", err)
+					service.Status = "Error"
+					UpdateMeshifyServiceHost(service)
 				} else {
 					service.ContainerId = id
 					service.Status = "Running"
@@ -299,6 +301,10 @@ func UpdateServiceHostConfig(body []byte) {
 					if err == nil {
 						service.ContainerId = id
 						service.Status = "Running"
+						UpdateMeshifyServiceHost(service)
+					} else {
+						log.Errorf("Error restarting service %v", err)
+						service.Status = "Error"
 						UpdateMeshifyServiceHost(service)
 					}
 				}
