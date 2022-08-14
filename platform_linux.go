@@ -109,7 +109,7 @@ func StartContainer(service model.Service) (string, error) {
 // check the status of the container
 func CheckContainer(service model.Service) bool {
 	// docker container ls -qf id=3f268613a949
-	var args = []string{"container", "ls", "qf", "id=" + service.ContainerId}
+	var args = []string{"container", "ls", "-qf", "id=" + service.ContainerId}
 
 	cmd := exec.Command("docker", args...)
 
@@ -125,6 +125,9 @@ func CheckContainer(service model.Service) bool {
 	}
 
 	if outstd.String() == service.ContainerId {
+		return true
+	}
+	if outstd.String() != "" {
 		return true
 	}
 
