@@ -473,9 +473,6 @@ func StartBackgroundRefreshService() {
 
 	for {
 
-		// Do this startup process every hour.  Keeps UPnP ports active, handles laptop sleeps, etc.
-		time.Sleep(60 * time.Minute)
-
 		file, err := os.Open(GetDataPath() + "meshify.conf")
 		if err != nil {
 			log.Errorf("Error opening meshify.conf for read: %v", err)
@@ -590,6 +587,8 @@ func StartBackgroundRefreshService() {
 			}
 			StartDNS()
 		}
+		// Do this startup process every hour.  Keeps UPnP ports active, handles laptop sleeps, etc.
+		time.Sleep(60 * time.Minute)
 	}
 }
 
