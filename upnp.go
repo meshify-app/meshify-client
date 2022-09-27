@@ -38,16 +38,17 @@ func ConfigureUPnP(host model.Host) error {
 					// get the external ip address
 					externalIP, err := c.GetExternalIPAddress()
 					if err != nil {
-						log.Error("Error getting external ip address")
-					}
-
-					// compare the externalIP to the endpoint
-					parts := strings.Split(host.Current.Endpoint, ":")
-					if parts[0] != externalIP {
-						log.Error("External IP address does not match endpoint")
-						// Update the host endpoint at meshify
-						host.Current.Endpoint = externalIP + ":" + parts[1]
-						UpdateMeshifyHost(host)
+						log.Error("Error getting external ip address, %v", err)
+					} else {
+						log.Infof("***UPNP*** External IP address: %s", externalIP)
+						// compare the externalIP to the endpoint
+						parts := strings.Split(host.Current.Endpoint, ":")
+						if parts[0] != externalIP && externalIP != "0.0.0.0" {
+							log.Error("External IP address does not match endpoint")
+							// Update the host endpoint at meshify
+							host.Current.Endpoint = externalIP + ":" + parts[1]
+							UpdateMeshifyHost(host)
+						}
 					}
 
 					// delete any old port mappings
@@ -60,7 +61,7 @@ func ConfigureUPnP(host model.Host) error {
 					// add port mapping
 					err = c.AddPortMapping("", uint16(host.Current.ListenPort), "UDP", uint16(host.Current.ListenPort), localAddr.IP.String(), true, host.Name+" "+host.MeshName, 0)
 					if err != nil {
-						log.Error("Error adding port mapping")
+						log.Error("Error adding port mapping, %v", err)
 					}
 				}
 			}
