@@ -38,12 +38,10 @@ func ConfigureUPnP(host model.Host) error {
 		clients, _, err := internetgateway1.NewWANIPConnection1Clients()
 
 		if err != nil {
-			log.Error("Error discovering gateway, upnp likely not supported. %v", err)
-			return err
+			log.Error("WAN Error discovering gateway, upnp likely not supported. %v", err)
 		}
 		if len(clients) == 0 {
-			log.Error("***UPNP*** No gateway found, upnp likely not supported.")
-			return err
+			log.Error("***UPNP***WAN No gateway found, upnp likely not supported.")
 		}
 		for _, c := range clients {
 
