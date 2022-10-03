@@ -144,41 +144,43 @@ func UpdateDNS(msg model.Message) error {
 			log.Errorf("Error reading message for DNS update: %v", msg)
 			return errors.New("Error reading message")
 		} else {
-			host := msg.Config[i].Hosts[index]
-			name := strings.ToLower(host.Name)
-			dnsTable[name] = append(dnsTable[name], host.Current.Address...)
-			if strings.Contains(host.Current.Address[0], ":") {
-				// ipv6
-			} else {
-				// ipv4
-				addresses := strings.Split(host.Current.Address[0], "/")
-				address := addresses[0]
-				digits := strings.Split(address, ".")
-				label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
-				dnsTable[label] = []string{name}
-				log.Infof("label = %s name = %s", label, name)
-
-			}
-			dnsTable[name] = append(dnsTable[name], host.Current.Address...)
-			msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
-			for j := 0; j < len(msg.Config[i].Hosts); j++ {
-				n := strings.ToLower(msg.Config[i].Hosts[j].Name)
-				if strings.Contains(msg.Config[i].Hosts[j].Current.Address[0], ":") {
+			if msg.Config[i].Hosts[index].Enable {
+				host := msg.Config[i].Hosts[index]
+				name := strings.ToLower(host.Name)
+				dnsTable[name] = append(dnsTable[name], host.Current.Address...)
+				if strings.Contains(host.Current.Address[0], ":") {
 					// ipv6
 				} else {
 					// ipv4
-					addresses := strings.Split(msg.Config[i].Hosts[j].Current.Address[0], "/")
+					addresses := strings.Split(host.Current.Address[0], "/")
 					address := addresses[0]
 					digits := strings.Split(address, ".")
 					label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
-					dnsTable[label] = []string{n}
+					dnsTable[label] = []string{name}
+					log.Infof("label = %s name = %s", label, name)
+
 				}
-				dnsTable[n] = append(dnsTable[n], msg.Config[i].Hosts[j].Current.Address...)
-				if msg.Config[i].Hosts[j].Current.Endpoint != "" {
-					ip_port := msg.Config[i].Hosts[j].Current.Endpoint
-					parts := strings.Split(ip_port, ":")
-					ip := parts[0]
-					serverTable[ip] = ip
+				dnsTable[name] = append(dnsTable[name], host.Current.Address...)
+				msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
+				for j := 0; j < len(msg.Config[i].Hosts); j++ {
+					n := strings.ToLower(msg.Config[i].Hosts[j].Name)
+					if strings.Contains(msg.Config[i].Hosts[j].Current.Address[0], ":") {
+						// ipv6
+					} else {
+						// ipv4
+						addresses := strings.Split(msg.Config[i].Hosts[j].Current.Address[0], "/")
+						address := addresses[0]
+						digits := strings.Split(address, ".")
+						label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
+						dnsTable[label] = []string{n}
+					}
+					dnsTable[n] = append(dnsTable[n], msg.Config[i].Hosts[j].Current.Address...)
+					if msg.Config[i].Hosts[j].Current.Endpoint != "" {
+						ip_port := msg.Config[i].Hosts[j].Current.Endpoint
+						parts := strings.Split(ip_port, ":")
+						ip := parts[0]
+						serverTable[ip] = ip
+					}
 				}
 			}
 		}
