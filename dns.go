@@ -71,53 +71,55 @@ func StartDNS() error {
 		if index == -1 {
 			log.Errorf("Error reading message %v", msg)
 		} else {
-			host := msg.Config[i].Hosts[index]
-			name := strings.ToLower(host.Name)
-			log.Infof("label = %s addr = %v", name, host.Current.Address)
-			DnsTable[name] = append(DnsTable[name], host.Current.Address...)
-			if strings.Contains(host.Current.Address[0], ":") {
-				// ipv6
-			} else {
-				// ipv4
-				addresses := strings.Split(host.Current.Address[0], "/")
-				address := addresses[0]
-				digits := strings.Split(address, ".")
-				label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
-				DnsTable[label] = []string{name}
-				log.Infof("label = %s name = %s", label, name)
-			}
-			msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
-			for j := 0; j < len(msg.Config[i].Hosts); j++ {
-				n := strings.ToLower(msg.Config[i].Hosts[j].Name)
-				if strings.Contains(msg.Config[i].Hosts[j].Current.Address[0], ":") {
+			if msg.Config[i].Hosts[index].Enable {
+				host := msg.Config[i].Hosts[index]
+				name := strings.ToLower(host.Name)
+				log.Infof("label = %s addr = %v", name, host.Current.Address)
+				DnsTable[name] = append(DnsTable[name], host.Current.Address...)
+				if strings.Contains(host.Current.Address[0], ":") {
 					// ipv6
 				} else {
 					// ipv4
-					addresses := strings.Split(msg.Config[i].Hosts[j].Current.Address[0], "/")
+					addresses := strings.Split(host.Current.Address[0], "/")
 					address := addresses[0]
 					digits := strings.Split(address, ".")
 					label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
-					DnsTable[label] = []string{n}
+					DnsTable[label] = []string{name}
+					log.Infof("label = %s name = %s", label, name)
 				}
-				log.Infof("label = %s name = %v", n, msg.Config[i].Hosts[j].Current.Address)
-				DnsTable[n] = append(DnsTable[n], msg.Config[i].Hosts[j].Current.Address...)
-				if msg.Config[i].Hosts[j].Current.Endpoint != "" {
-					ip_port := msg.Config[i].Hosts[j].Current.Endpoint
-					parts := strings.Split(ip_port, ":")
-					ip := parts[0]
-					ServerTable[ip] = ip
-				}
-			}
-
-			if len(host.Current.Address[0]) > 3 {
-				address := host.Current.Address[0][:len(host.Current.Address[0])-3] + ":53"
-				server := &dns.Server{Addr: address, Net: "udp", TsigSecret: nil, ReusePort: true}
-				log.Infof("Starting DNS Server on %s", address)
-				go func() {
-					if err := server.ListenAndServe(); err != nil {
-						log.Errorf("Failed to setup the DNS server on %s: %s\n", address, err.Error())
+				msg.Config[i].Hosts = append(msg.Config[i].Hosts[:index], msg.Config[i].Hosts[index+1:]...)
+				for j := 0; j < len(msg.Config[i].Hosts); j++ {
+					n := strings.ToLower(msg.Config[i].Hosts[j].Name)
+					if strings.Contains(msg.Config[i].Hosts[j].Current.Address[0], ":") {
+						// ipv6
+					} else {
+						// ipv4
+						addresses := strings.Split(msg.Config[i].Hosts[j].Current.Address[0], "/")
+						address := addresses[0]
+						digits := strings.Split(address, ".")
+						label := fmt.Sprintf("%s.%s.%s.%s.in-addr.arpa", digits[3], digits[2], digits[1], digits[0])
+						DnsTable[label] = []string{n}
 					}
-				}()
+					log.Infof("label = %s name = %v", n, msg.Config[i].Hosts[j].Current.Address)
+					DnsTable[n] = append(DnsTable[n], msg.Config[i].Hosts[j].Current.Address...)
+					if msg.Config[i].Hosts[j].Current.Endpoint != "" {
+						ip_port := msg.Config[i].Hosts[j].Current.Endpoint
+						parts := strings.Split(ip_port, ":")
+						ip := parts[0]
+						ServerTable[ip] = ip
+					}
+				}
+
+				if len(host.Current.Address[0]) > 3 {
+					address := host.Current.Address[0][:len(host.Current.Address[0])-3] + ":53"
+					server := &dns.Server{Addr: address, Net: "udp", TsigSecret: nil, ReusePort: true}
+					log.Infof("Starting DNS Server on %s", address)
+					go func() {
+						if err := server.ListenAndServe(); err != nil {
+							log.Errorf("Failed to setup the DNS server on %s: %s\n", address, err.Error())
+						}
+					}()
+				}
 			}
 		}
 	}
