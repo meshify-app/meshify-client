@@ -71,7 +71,7 @@ func StartDNS() error {
 		if index == -1 {
 			log.Errorf("Error reading message %v", msg)
 		} else {
-			if msg.Config[i].Hosts[index].Enable {
+			if msg.Config[i].Hosts[index].Enable && msg.Config[i].Hosts[index].Current.EnableDns {
 				host := msg.Config[i].Hosts[index]
 				name := strings.ToLower(host.Name)
 				log.Infof("label = %s addr = %v", name, host.Current.Address)
@@ -144,7 +144,7 @@ func UpdateDNS(msg model.Message) error {
 			log.Errorf("Error reading message for DNS update: %v", msg)
 			return errors.New("Error reading message")
 		} else {
-			if msg.Config[i].Hosts[index].Enable {
+			if msg.Config[i].Hosts[index].Enable && msg.Config[i].Hosts[index].Current.EnableDns {
 				host := msg.Config[i].Hosts[index]
 				name := strings.ToLower(host.Name)
 				dnsTable[name] = append(dnsTable[name], host.Current.Address...)
