@@ -33,14 +33,14 @@ func StartChannel(c chan []byte) {
 			break
 		}
 
-		err = GetMeshifyConfig(&etag)
+		etag, err = GetMeshifyConfig(etag)
 		if err != nil {
 			log.Errorf("Error getting meshify config: %v", err)
 		}
 	}
 }
 
-func GetMeshifyConfig(etag *string) error {
+func CallMeshify(etag *string) ([]byte, error) {
 
 	host := config.MeshifyHost
 	var client *http.Client
@@ -66,13 +66,6 @@ func GetMeshifyConfig(etag *string) error {
 
 	}
 
-	if !config.loaded {
-		err := loadConfig()
-		if err != nil {
-			log.Errorf("Failed to load config.")
-		}
-	}
-
 	var reqURL string = fmt.Sprintf(meshifyHostAPIFmt, host, config.HostID)
 	if !config.Quiet {
 		log.Infof("  GET %s", reqURL)
@@ -80,7 +73,7 @@ func GetMeshifyConfig(etag *string) error {
 
 	req, err := http.NewRequest("GET", reqURL, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if req != nil {
 		req.Header.Set("X-API-KEY", config.ApiKey)
@@ -91,7 +84,57 @@ func GetMeshifyConfig(etag *string) error {
 	resp, err := client.Do(req)
 	if err == nil {
 		if resp.StatusCode == 304 {
+			buffer, err := ioutil.ReadFile(GetDataPath() + "meshify.conf")
+			if err == nil {
+				return buffer, nil
+			}
+
 		} else if resp.StatusCode == 401 {
+			return nil, fmt.Errorf("Unauthorized")
+		} else if resp.StatusCode != 200 {
+			log.Errorf("Response Error Code: %v", resp.StatusCode)
+			return nil, fmt.Errorf("Response Error Code: %v", resp.StatusCode)
+		} else {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Errorf("error reading body %v", err)
+			}
+			log.Debugf("%s", string(body))
+
+			etag2 := resp.Header.Get("ETag")
+
+			if *etag != etag2 {
+				log.Infof("etag = %s  etag2 = %s", *etag, etag2)
+				*etag = etag2
+			} else {
+				log.Infof("etag %s is equal", etag2)
+			}
+			if resp != nil {
+				resp.Body.Close()
+			}
+
+			return body, nil
+		}
+	} else {
+		log.Errorf("ERROR: %v, continuing", err)
+	}
+
+	return nil, err
+
+}
+
+func GetMeshifyConfig(etag string) (string, error) {
+
+	if !config.loaded {
+		err := loadConfig()
+		if err != nil {
+			log.Errorf("Failed to load config.")
+		}
+	}
+
+	body, err := CallMeshify(&etag)
+	if err != nil {
+		if err.Error() == "Unauthorized" {
 			log.Errorf("Unauthorized - looking for another API key")
 			// Read the config and find another API key
 			buffer, err := ioutil.ReadFile(GetDataPath() + "meshify.conf")
@@ -105,9 +148,16 @@ func GetMeshifyConfig(etag *string) error {
 
 							if host.HostGroup == config.HostID && host.APIKey != config.ApiKey {
 								config.ApiKey = host.APIKey
-								found = true
 								saveConfig()
-								break
+								log.Infof("Trying %s %s", host.HostGroup, host.APIKey)
+								body, err = CallMeshify(&etag)
+								if err == nil {
+									log.Infof("Found working API key - etag %s", etag)
+									found = true
+									UpdateMeshifyConfig(body)
+									return etag, nil
+									break
+								}
 							}
 						}
 					}
@@ -125,34 +175,15 @@ func GetMeshifyConfig(etag *string) error {
 			// pick up any changes from the agent or manually editing the config file.
 			reloadConfig()
 
-		} else if resp.StatusCode != 200 {
-			log.Errorf("Response Error Code: %v", resp.StatusCode)
-			// time.Sleep(10 * time.Second)
 		} else {
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				log.Errorf("error reading body %v", err)
-			}
-			log.Debugf("%s", string(body))
-
-			etag2 := resp.Header.Get("ETag")
-
-			if *etag != etag2 {
-				log.Infof("etag = %s  etag2 = %s", *etag, etag2)
-				*etag = etag2
-			} else {
-				log.Infof("etag %s is equal", etag2)
-			}
-			UpdateMeshifyConfig(body)
+			log.Error(err)
 		}
 	} else {
-		log.Errorf("ERROR: %v, continuing", err)
-	}
-	if resp != nil {
-		resp.Body.Close()
+		UpdateMeshifyConfig(body)
+		return etag, nil
 	}
 
-	return err
+	return "", err
 }
 
 func UpdateMeshifyHost(host model.Host) error {
