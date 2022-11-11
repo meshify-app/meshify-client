@@ -16,6 +16,9 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
+    dns:
+      - 8.8.8.8
+      - 9.9.9.9
     ports:
       - "30000:30000/udp"
 
