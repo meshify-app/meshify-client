@@ -83,7 +83,7 @@ func StartContainer(service model.Service) (string, error) {
 
 	port := fmt.Sprintf("%d", service.ServicePort)
 
-	var args = []string{"run", "--rm", "-d", "--cap-add", "NET_ADMIN", "--cap-add", "SYS_MODULE", "-e", "MESHIFY_HOST_ID=" + service.RelayHost.HostGroup, "-e", "MESHIFY_API_KEY=" + service.RelayHost.APIKey, "-p", port + ":" + port + "/udp", "meshify-client"}
+	var args = []string{"run", "--rm", "-d", "--cap-add", "NET_ADMIN", "--cap-add", "SYS_MODULE", "--sysctl", "net.ipv4.conf.all.src_valid_mark=1", "-e", "MESHIFY_HOST_ID=" + service.RelayHost.HostGroup, "-e", "MESHIFY_API_KEY=" + service.RelayHost.APIKey, "-p", port + ":" + port + "/udp", "meshify-client"}
 	cmd := exec.Command("docker", args...)
 
 	var outerr bytes.Buffer
