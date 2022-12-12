@@ -63,6 +63,7 @@ PrivateKey = {{ .Host.Current.PrivateKey }}
 {{ $server := .Host.Current.Endpoint -}}
 {{ if ne .Host.Current.ListenPort 0 -}}ListenPort = {{ .Host.Current.ListenPort }}{{- end}}
 {{ if .Host.Current.Dns }}DNS = {{ StringsJoin .Host.Current.Dns ", " }}{{ end }}
+{{ if .Host.Current.Table }}Table = {{ .Host.Current.Table }}{{- end}}
 {{ if ne .Host.Current.Mtu 0 -}}MTU = {{.Host.Current.Mtu}}{{- end}}
 {{ if .Host.Current.PreUp -}}PreUp = {{ .Host.Current.PreUp }}{{- end}}
 {{ if .Host.Current.PostUp -}}PostUp = {{ .Host.Current.PostUp }}{{- end}}
