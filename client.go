@@ -19,6 +19,7 @@ import (
 
 var meshifyHostAPIFmt = "%s/api/v1.0/host/%s/status"
 var meshifyHostUpdateAPIFmt = "%s/api/v1.0/host/%s"
+var client *http.Client = nil
 
 // Start the channel that iterates the meshify update function
 func StartChannel(c chan []byte) {
@@ -43,27 +44,28 @@ func StartChannel(c chan []byte) {
 func CallMeshify(etag *string) ([]byte, error) {
 
 	host := config.MeshifyHost
-	var client *http.Client
 
-	if strings.HasPrefix(host, "http:") {
-		client = &http.Client{
-			Timeout: time.Second * 10,
-		}
-	} else {
-		// Create a transport like http.DefaultTransport, but with the configured LocalAddr
-		transport := &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			Dial: (&net.Dialer{
-				Timeout:   5 * time.Second,
-				KeepAlive: 60 * time.Second,
-				LocalAddr: config.sourceAddr,
-			}).Dial,
-			TLSHandshakeTimeout: 10 * time.Second,
-		}
-		client = &http.Client{
-			Transport: transport,
-		}
+	if client == nil {
+		if strings.HasPrefix(host, "http:") {
+			client = &http.Client{
+				Timeout: time.Second * 10,
+			}
+		} else {
+			// Create a transport like http.DefaultTransport, but with the configured LocalAddr
+			transport := &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				Dial: (&net.Dialer{
+					Timeout:   5 * time.Second,
+					KeepAlive: 60 * time.Second,
+					LocalAddr: config.sourceAddr,
+				}).Dial,
+				TLSHandshakeTimeout: 10 * time.Second,
+			}
+			client = &http.Client{
+				Transport: transport,
+			}
 
+		}
 	}
 
 	var reqURL string = fmt.Sprintf(meshifyHostAPIFmt, host, config.HostID)
@@ -93,7 +95,7 @@ func CallMeshify(etag *string) ([]byte, error) {
 			return nil, fmt.Errorf("Unauthorized")
 		} else if resp.StatusCode != 200 {
 			log.Errorf("Response Error Code: %v", resp.StatusCode)
-			return nil, fmt.Errorf("Response Error Code: %v", resp.StatusCode)
+			return nil, fmt.Errorf("response error code: %v", resp.StatusCode)
 		} else {
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
@@ -109,9 +111,7 @@ func CallMeshify(etag *string) ([]byte, error) {
 			} else {
 				log.Infof("etag %s is equal", etag2)
 			}
-			if resp != nil {
-				resp.Body.Close()
-			}
+			resp.Body.Close()
 
 			return body, nil
 		}
@@ -156,7 +156,6 @@ func GetMeshifyConfig(etag string) (string, error) {
 									found = true
 									UpdateMeshifyConfig(body)
 									return etag, nil
-									break
 								}
 							}
 						}
@@ -174,6 +173,9 @@ func GetMeshifyConfig(etag string) (string, error) {
 			}
 			// pick up any changes from the agent or manually editing the config file.
 			reloadConfig()
+
+			// start a new http connection in case the host changes
+			client = nil
 
 		} else {
 			log.Error(err)
@@ -669,10 +671,6 @@ func DoWork() {
 
 		}
 	}()
-}
-
-func getStatistics() error {
-	return nil
 }
 
 func calculateCurrentTimestamp() int64 {
